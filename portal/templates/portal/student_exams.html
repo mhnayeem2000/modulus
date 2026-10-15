@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load coaching_tags %}
+{% block title %}পরীক্ষা{% endblock %}
+{% block page_title %}আমার পরীক্ষা{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">{{ student.get_year_group_display }}</span><h1>পরীক্ষা ও প্রস্তুতি</h1><p>তোমার ব্যাচের পরীক্ষার সময়, অধ্যায় এবং প্রকাশিত নম্বর।</p></div></section>
+<section class="panel">
+  {% if exams %}<div class="table-wrap"><table class="data-table student-data-table"><thead><tr><th>পরীক্ষা</th><th>তারিখ</th><th>পত্র</th><th>অধ্যায় ও টপিক</th><th>পূর্ণমান</th><th>তোমার নম্বর</th></tr></thead><tbody>{% for exam in exams %}{% with result=results|get_item:exam.pk %}
+  <tr><td><strong>{{ exam.title }}</strong></td><td>{{ exam.exam_date|date:"j F, Y" }}</td><td>{{ exam.paper }}</td><td>{{ exam.chapter }}<small>{{ exam.topic }}</small></td><td>{{ exam.total_marks }}</td><td>{% if result %}<span class="result-pill">{{ result.marks }} / {{ exam.total_marks }}</span>{% else %}<span class="muted">{% if exam.exam_date < today %}ফল প্রকাশ হয়নি{% else %}আসন্ন পরীক্ষা{% endif %}</span>{% endif %}</td></tr>
+  {% endwith %}{% endfor %}</tbody></table></div>{% else %}<div class="empty-state"><span>▤</span><strong>তোমার ব্যাচের কোনো পরীক্ষা যোগ হয়নি</strong><p>শিক্ষক পরীক্ষা যোগ করলে এখানে দেখতে পাবে।</p></div>{% endif %}
+</section>
+{% endblock %}

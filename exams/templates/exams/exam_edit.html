@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}পরীক্ষার বিবরণ সংশোধন{% endblock %}
+{% block page_title %}পরীক্ষার বিবরণ সংশোধন{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">পরীক্ষা ও ফলাফল</span><h1>পরীক্ষার বিবরণ সংশোধন</h1><p>SMS-এ বিষয়, পত্র ও অধ্যায় সঠিকভাবে দেখাতে পরীক্ষার তথ্য যাচাই করুন।</p></div></section>
+<section class="content-grid management-grid exam-management-grid">
+  <article class="panel form-panel">
+    <div class="panel-heading"><div><span class="eyebrow">পরীক্ষার বিবরণ</span><h2>{{ exam.title }}</h2></div></div>
+    <form method="post" class="stacked-form">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="field-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}{% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}</div>
+      {% endfor %}
+      <div class="form-actions"><a class="button button-light" href="{% url 'exam_list' %}">ফিরে যান</a><button class="button button-primary" type="submit">পরিবর্তন সংরক্ষণ করুন <span>→</span></button></div>
+    </form>
+  </article>
+</section>
+{% endblock %}

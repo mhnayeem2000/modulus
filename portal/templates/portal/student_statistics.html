@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}আমার পরিসংখ্যান{% endblock %}
+{% block page_title %}আমার পরিসংখ্যান{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">{{ student.get_year_group_display }}</span><h1>আমার অগ্রগতি</h1><p>ক্লাসে উপস্থিতি আর পরীক্ষার ফল—মাস ধরে নিজের উন্নতি দেখো।</p></div></section>
+<section class="panel month-filter-panel"><form method="get" class="date-picker-form"><label for="student-month">যে মাসের হিসাব দেখতে চাও</label><input id="student-month" type="month" name="month" value="{{ month_value }}"><button class="button button-light button-small" type="submit">হিসাব দেখো</button></form></section>
+<h2 class="statistics-month-heading">{{ month_label }} · এক নজরে</h2>
+<section class="stats-grid statistics-stats-grid">
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-green">✓</span><span class="stat-caption">উপস্থিতির হার</span></div><strong class="stat-number">{{ attendance_rate }}<small>%</small></strong><span class="stat-foot">{{ attended_days }} দিন উপস্থিত · {{ class_days }} ক্লাসের দিন</span></article>
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-red">−</span><span class="stat-caption">অনুপস্থিত</span></div><strong class="stat-number">{{ absent_days }}</strong><span class="stat-foot">রেকর্ড অনুযায়ী অনুপস্থিতি</span></article>
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-purple">▤</span><span class="stat-caption">এই মাসে পরীক্ষা</span></div><strong class="stat-number">{{ exam_count }}</strong><span class="stat-foot">প্রকাশিত ফলাফল</span></article>
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-orange">↗</span><span class="stat-caption">পরীক্ষার গড়</span></div><strong class="stat-number">{{ average_marks }}<small>%</small></strong><span class="stat-foot">এই মাসের ফলাফলের গড়</span></article>
+</section>
+<section class="content-grid student-dashboard-grid">
+  <article class="panel"><div class="panel-heading"><div><span class="eyebrow">ক্লাসে অংশগ্রহণ</span><h2>{{ month_label }}-এর ক্লাস</h2></div><span class="intro-count">{{ sessions|length }}টি ক্লাস</span></div>
+    {% if sessions %}<div class="student-activity-list">{% for session in sessions %}<div class="student-activity-row"><span class="session-date"><strong>{{ session.date|date:"d" }}</strong><small>{{ session.date|date:"M" }}</small></span><span class="activity-description"><strong>{{ session.subject }} · {{ session.chapter }}</strong><small>{{ session.get_year_group_display }} · {{ session.teacher.get_full_name|default:session.teacher.username }}</small></span></div>{% endfor %}</div>{% else %}<div class="empty-state"><span>◷</span><strong>এই মাসে ক্লাসের তথ্য নেই</strong><p>শিক্ষক ক্লাসের তথ্য যোগ করলে এখানে দেখতে পাবে।</p></div>{% endif %}
+  </article>
+  <article class="panel"><div class="panel-heading"><div><span class="eyebrow">পরীক্ষার ফল</span><h2>এই মাসের নম্বর</h2></div></div>
+    {% if results %}<div class="student-activity-list">{% for result in results %}<div class="student-activity-row"><span class="activity-description"><strong>{{ result.exam.title }}</strong><small>{{ result.exam.paper }} · {{ result.exam.chapter }}</small></span><span class="result-marks">{{ result.marks }}<small> / {{ result.exam.total_marks }}</small></span></div>{% endfor %}</div>{% else %}<div class="empty-state"><span>▤</span><strong>এখনো কোনো নম্বর প্রকাশ হয়নি</strong><p>শিক্ষক ফলাফল দিলে এখানে দেখা যাবে।</p></div>{% endif %}
+  </article>
+</section>
+{% endblock %}

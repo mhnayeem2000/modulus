@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}আমার ড্যাশবোর্ড{% endblock %}
+{% block page_title %}আমার ড্যাশবোর্ড{% endblock %}
+{% block content %}
+<section class="welcome-banner student-welcome">
+  <div><span class="eyebrow">শিক্ষার্থী পোর্টাল · {{ student.get_year_group_display }}</span><h1>স্বাগতম, {{ student.name }} 👋</h1><p>আগামীকালের ক্লাস আর এই সপ্তাহের পরীক্ষার প্রস্তুতি এক নজরে।</p></div>
+  <div class="welcome-date"><span class="date-icon">◷</span><span><strong>{{ today|date:"l" }}</strong><small>{{ today|date:"j F, Y" }}</small></span></div>
+</section>
+<section class="support-session-banner student-support-session">
+  <div class="support-session-copy">
+    <span class="support-session-icon" aria-hidden="true">✦</span>
+    <div><span class="eyebrow">সরাসরি শিক্ষকের সহায়তা</span><h2>কোনো পড়া বুঝতে সমস্যা হচ্ছে?</h2><p>সাপোর্ট সেশনে যোগ দিয়ে শিক্ষকের সঙ্গে Google Meet-এ কথা বলো।</p></div>
+  </div>
+  <a class="button button-primary support-session-button" href="{{ support_session_url }}" target="_blank" rel="noopener noreferrer">সাপোর্ট সেশনে যোগ দাও <span aria-hidden="true">↗</span></a>
+</section>
+<section class="panel fee-summary-panel">
+  <div class="panel-heading">
+    <div><span class="eyebrow">বেতন ও বকেয়া</span><h2>আমার বেতন সংক্ষিপ্তসার</h2><p class="muted">কোন মাসে কত দেওয়া হয়েছে, কত বাকি আছে দেখা যাবে।</p></div>
+    <span class="fee-status {% if student_fee_up_to_date %}fee-status-updated{% else %}fee-status-due{% endif %}">{% if student_fee_up_to_date %}Up to date{% else %}Due{% endif %}</span>
+  </div>
+  <div class="student-current-fee">
+    <span>{{ student_fee_current_month }} · এই মাসের নির্ধারিত বেতন</span>
+    {% if student_fee_current_record %}
+    <strong>{{ student_fee_current_record.monthly_fee }} টাকা</strong>
+    <small>এ মাসে দেওয়া {{ student_fee_current_record.amount_paid }} টাকা · বাকি {{ student_fee_current_record.due_amount }} টাকা</small>
+    {% else %}
+    <strong>এখনো নির্ধারণ করা হয়নি</strong>
+    <small>অ্যাকাউন্ট নির্ধারিত হলে এখানে দেখা যাবে।</small>
+    {% endif %}
+  </div>
+  <div class="fee-detail-summary">
+    <div><span>মোট বেতন</span><strong>{{ student_fee_total }} টাকা</strong></div>
+    <div><span>দেওয়া</span><strong>{{ student_fee_paid }} টাকা</strong></div>
+    <div><span>বাকি</span><strong>{{ student_fee_due }} টাকা</strong></div>
+  </div>
+  {% if student_fee_records %}
+  <div class="fee-month-list">
+    {% for record in student_fee_records %}
+    <div class="fee-month-item">
+      <div class="fee-month-header">
+        <strong>{{ record.month }}</strong>
+        <span class="fee-month-status {% if record.due_amount %}fee-month-status-due{% else %}fee-month-status-paid{% endif %}">{% if record.due_amount %}বাকি {{ record.due_amount }}{% else %}পরিশোধিত{% endif %}</span>
+      </div>
+      <div class="fee-month-metrics">
+        <span>মাসিক বেতন: {{ record.monthly_fee }} টাকা</span>
+        <span>দেওয়া: {{ record.amount_paid }} টাকা</span>
+        <span>বাকি: {{ record.due_amount }} টাকা</span>
+      </div>
+      {% if record.note %}<p>{{ record.note }}</p>{% endif %}
+      <small>রেকর্ড: {{ record.updated_at|date:"d M Y, h:i A" }}</small>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state compact-empty"><span>₹</span><strong>কোনো বেতন রেকর্ড নেই</strong><p>মাসভিত্তিক বেতন রেকর্ড যোগ হলে এখানে দেখা যাবে।</p></div>
+  {% endif %}
+</section>
+<section class="student-next-events" aria-label="পরবর্তী ক্লাস ও পরীক্ষা">
+  {% if next_class %}
+  <article class="student-next-event next-event-class">
+    <div class="next-event-heading"><span class="next-event-icon" aria-hidden="true">◷</span><span class="eyebrow">{% if next_class.status == 'running' %}চলমান ক্লাস{% else %}পরবর্তী ক্লাস{% endif %}</span></div>
+    <h2>{{ next_class.routine.subject }}{% if next_class.routine.paper %} · {{ next_class.routine.paper }}{% endif %}</h2>
+    <p>{{ next_class.routine.teacher.get_full_name|default:next_class.routine.teacher.username }} · {{ next_class.routine.get_year_group_display }}</p>
+    <div class="next-event-meta"><strong>{{ next_class.day_label }} · {{ next_class.time_label }}</strong>{% if next_class.routine.chapter %}<span>অধ্যায়: {{ next_class.routine.chapter }}</span>{% endif %}</div>
+    <a href="{% url 'student_routine' %}">সম্পূর্ণ রুটিন <span aria-hidden="true">→</span></a>
+  </article>
+  {% else %}
+  <article class="student-next-event next-event-class next-event-empty">
+    <div class="next-event-heading"><span class="next-event-icon" aria-hidden="true">◷</span><span class="eyebrow">পরবর্তী ক্লাস</span></div>
+    <h2>এখনো কোনো ক্লাসের রুটিন নেই</h2>
+    <p>নতুন ক্লাস যোগ হলে এখানে দেখা যাবে।</p>
+    <a href="{% url 'student_routine' %}">সম্পূর্ণ রুটিন <span aria-hidden="true">→</span></a>
+  </article>
+  {% endif %}
+  {% if next_exam %}
+  <article class="student-next-event next-event-exam">
+    <div class="next-event-heading"><span class="next-event-icon" aria-hidden="true">▤</span><span class="eyebrow">পরবর্তী পরীক্ষা</span></div>
+    <h2>{{ next_exam.title }}</h2>
+    <p>{{ next_exam.subject }}{% if next_exam.subject and next_exam.paper %} · {% endif %}{{ next_exam.paper }}{% if next_exam.chapter %} · {{ next_exam.chapter }}{% endif %}</p>
+    <div class="next-event-meta"><strong>{{ next_exam.exam_date|date:"l, j F Y" }}</strong><span>পূর্ণমান {{ next_exam.total_marks }}{% if next_exam.topic %} · {{ next_exam.topic }}{% endif %}</span></div>
+    <a href="{% url 'student_exams' %}">পরীক্ষার বিস্তারিত <span aria-hidden="true">→</span></a>
+  </article>
+  {% endif %}
+</section>
+<section class="panel student-study-panel" id="todays-study" aria-labelledby="todays-study-title">
+  <div class="panel-heading">
+    <div><span class="eyebrow">আজকের পড়া</span><h2 id="todays-study-title">আজকের ক্লাসের পড়া</h2><p class="muted">পড়া শেষ হলে চেক করো। কোনো অংশে সমস্যা হলে নিচে লিখে শিক্ষককে জানাও।</p></div>
+    {% if today_study_sessions %}<span class="intro-count">{{ today_study_sessions|length }}টি ক্লাস</span>{% endif %}
+  </div>
+  {% if today_study_sessions %}
+  <div class="student-study-list">
+    {% for item in today_study_sessions %}
+    <article class="student-study-card{% if item.status == 'missed' %} student-study-card-missed{% elif item.status == 'completed' %} student-study-card-completed{% endif %}">
+      <div class="student-study-heading">
+        <span class="tomorrow-class-index">{{ forloop.counter|stringformat:"02d" }}</span>
+        <div><strong>{{ item.session.subject }}{% if item.session.paper %} · {{ item.session.paper }}{% endif %}</strong><small>{{ item.session.get_year_group_display }} · {{ item.session.chapter }}{% if item.session.topic %} · {{ item.session.topic }}{% endif %}</small><small>শিক্ষক: {{ item.session.teacher.get_full_name|default:item.session.teacher.username }}</small></div>
+      </div>
+      <div class="student-study-summary">
+        <span class="study-status study-status-{{ item.status }}">
+          {% if item.status == 'completed' %}সম্পন্ন{% elif item.status == 'missed' %}অসম্পূর্ণ{% else %}আবার পূরণ করতে হবে{% endif %}
+        </span>
+        <span class="countdown-pill">
+          {% if item.status == 'missed' %}জমা দেওয়ার সময় শেষ{% elif item.can_submit %}বাকি: {{ item.time_left_label }}{% else %}জমা দেওয়ার সময় শেষ{% endif %}
+        </span>
+      </div>
+      <details class="student-study-accordion"{% if item.status == 'pending' %} open{% endif %}>
+        <summary>
+          <span>{{ item.session.subject }}{% if item.session.paper %} · {{ item.session.paper }}{% endif %}</span>
+          <span>{{ item.session.teacher.get_full_name|default:item.session.teacher.username }}</span>
+        </summary>
+        <div class="student-study-accordion-body">
+          <div class="student-study-meta">
+            <p><strong>অধ্যায়:</strong> {{ item.session.chapter }}</p>
+            {% if item.session.topic %}<p><strong>টপিক:</strong> {{ item.session.topic }}</p>{% endif %}
+            <p><strong>জমা দেওয়ার শেষ সময়:</strong> {{ item.deadline|date:"d M Y, h:i A" }}</p>
+          </div>
+          <form class="student-study-form" method="post" action="{% url 'update_class_session_progress' item.session.pk %}">
+            {% csrf_token %}
+            <label class="study-complete-control"><input type="checkbox" name="is_completed" value="on"{% if item.progress.is_completed %} checked{% endif %}{% if not item.can_submit %} disabled{% endif %}><span>এই পড়া সম্পন্ন করেছি</span></label>
+            <label class="study-problem-label" for="study-problem-{{ item.session.pk }}">কোনো সমস্যা হলে জানাও <span>(ঐচ্ছিক)</span></label>
+            <textarea id="study-problem-{{ item.session.pk }}" name="problem_description" rows="3" maxlength="1500" placeholder="কোন অংশ বুঝতে সমস্যা হয়েছে?"{% if not item.can_submit %} readonly{% endif %}>{{ item.progress.problem_description|default:'' }}</textarea>
+            <div class="student-study-actions">
+              {% if item.progress %}<small>সর্বশেষ আপডেট: {{ item.progress.updated_at|date:"g:i A" }}</small>{% else %}<small>এখনো অগ্রগতি জানাওনি</small>{% endif %}
+              {% if item.can_submit %}
+              <button class="button button-primary button-small" type="submit">অগ্রগতি সংরক্ষণ</button>
+              {% else %}
+              <button class="button button-primary button-small" type="button" disabled>জমা দেওয়ার সময় শেষ</button>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+      </details>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state compact-empty"><span>✓</span><strong>আজকের পড়া এখনো যোগ হয়নি</strong><p>শিক্ষক পরিচালিত ক্লাসের তথ্য যোগ করলে তা এখানে চেকলিস্ট হিসেবে দেখা যাবে।</p></div>
+  {% endif %}
+</section>
+<section class="panel tomorrow-classes-panel" aria-labelledby="tomorrow-classes-title">
+  <div class="panel-heading">
+    <div><span class="eyebrow">আগামীকালের প্রস্তুতি</span><h2 id="tomorrow-classes-title">কালকের ক্লাস · {{ tomorrow|date:"l, j F" }}</h2><p class="muted">কোন শিক্ষক, কোন সময়ে, কোন বিষয় পড়াবেন দেখে নাও।</p></div>
+    <a class="button button-light button-small" href="{% url 'student_routine' %}">পুরো রুটিন <span>→</span></a>
+  </div>
+  {% if tomorrow_classes %}
+  <div class="tomorrow-class-list">
+    {% for routine in tomorrow_classes %}
+    <article class="tomorrow-class-card">
+      <span class="tomorrow-class-index">{{ forloop.counter|stringformat:"02d" }}</span>
+      <div class="tomorrow-class-main">
+        <strong>{{ routine.subject }}{% if routine.paper %} · {{ routine.paper }}{% endif %}</strong>
+        <span>{{ routine.teacher.get_full_name|default:routine.teacher.username }}</span>
+        <small>{% if routine.chapter %}অধ্যায়: {{ routine.chapter }}{% else %}অধ্যায় পরে জানানো হবে{% endif %}</small>
+      </div>
+      <div class="tomorrow-class-time"><span>সময়</span><strong>{{ routine.start_time|time:"g:i A" }}</strong><small>থেকে {{ routine.end_time|time:"g:i A" }}</small></div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="tomorrow-no-class"><span class="tomorrow-no-class-icon">✓</span><div><strong>কাল কোনো ক্লাস নেই</strong><p>আগামীকাল তোমার ব্যাচে কোনো ক্লাসের সময়সূচি নেই।</p></div></div>
+  {% endif %}
+</section>
+{% include "students/partials/attendance_calendar.html" %}
+<section class="panel weekly-exams-panel" aria-labelledby="weekly-exams-title">
+  <div class="panel-heading">
+    <div><span class="eyebrow">এই সপ্তাহের প্রস্তুতি</span><h2 id="weekly-exams-title">সামনের পরীক্ষা</h2><p class="muted">{{ today|date:"j F" }} – {{ week_end|date:"j F" }}</p></div>
+    <a class="button button-light button-small" href="{% url 'student_exams' %}">সব পরীক্ষা <span>→</span></a>
+  </div>
+  {% if weekly_exams %}
+  <div class="weekly-exam-list">
+    {% for exam in weekly_exams %}
+    <article class="weekly-exam-card">
+      <span class="weekly-exam-date"><strong>{{ exam.exam_date|date:"j" }}</strong><small>{{ exam.exam_date|date:"M" }}</small></span>
+      <div class="weekly-exam-details">
+        <strong>{{ exam.title }}</strong>
+        <span>{{ exam.paper }}{% if exam.chapter %} · {{ exam.chapter }}{% endif %}{% if exam.topic %} · {{ exam.topic }}{% endif %}</span>
+      </div>
+      <div class="weekly-exam-meta"><strong>{{ exam.exam_date|date:"l" }}</strong><span>পূর্ণমান {{ exam.total_marks }}</span></div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+    <div class="weekly-exams-empty"><span>▤</span><div><strong>এই সপ্তাহে কোনো পরীক্ষা নেই</strong><p>এখন পরীক্ষার চাপ নেই—নিয়মিত পড়া চালিয়ে যাও।</p></div></div>
+    {% endif %}
+  </section>
+  {% endblock %}

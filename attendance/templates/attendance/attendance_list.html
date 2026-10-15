@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load coaching_tags %}
+{% block title %}উপস্থিতি{% endblock %}
+{% block page_title %}উপস্থিতি{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">দৈনিক ক্লাস ব্যবস্থাপনা</span><h1>শিক্ষার্থীদের উপস্থিতি</h1><p>তারিখ বেছে নিয়ে শিক্ষার্থীদের উপস্থিতি শুধু সুপার অ্যাডমিনই চূড়ান্তভাবে নথিভুক্ত করতে পারবেন।</p></div></section>
+<p>
+  <a class="button button-light button-small" href="{% url 'sms_system' %}">SMS System: {% if sms_enabled %}চালু{% else %}বন্ধ{% endif %}</a>
+  <a class="button button-light button-small" href="{% url 'sms_report' %}">SMS-এর পূর্ণ রিপোর্ট দেখুন</a>
+</p>
+{% if saved %}<div class="alert alert-success" role="status">উপস্থিতি সফলভাবে সংরক্ষণ হয়েছে।</div>{% endif %}
+{% if date_error %}<div class="alert alert-error" role="alert">{{ date_error }}</div>{% endif %}
+{% if notification_error %}<div class="alert alert-error" role="alert">{{ notification_error }}</div>{% endif %}
+<section class="panel attendance-panel">
+  <div class="attendance-toolbar">
+    <div><strong>BulkSMSBD ব্যালেন্স</strong><p class="muted">বর্তমান SMS balance দেখতে provider account যাচাই করুন। API key শুধু server-এ ব্যবহার হবে।</p></div>
+    <form method="post" action="{% url 'sms_balance_api' %}" data-sms-fallback-url="{% url 'attendance_list' %}" data-sms-ajax-form>
+      {% csrf_token %}
+      <input type="hidden" name="action" value="check_sms_balance">
+      <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+      <button class="button button-light button-small" type="submit">ব্যালেন্স দেখুন</button>
+    </form>
+  </div>
+  <p data-sms-balance-result role="status" {% if sms_balance == None %}hidden{% endif %}>বর্তমান ব্যালেন্স: <strong>{% if sms_balance != None %}৳{{ sms_balance|floatformat:2 }}{% endif %}</strong></p>
+  <div class="alert alert-error" data-sms-ajax-error role="alert" hidden></div>
+</section>
+<section class="panel attendance-panel">
+  <div class="attendance-toolbar">
+    <form method="get" class="date-picker-form"><label for="attendance-date">ক্লাসের তারিখ</label><input id="attendance-date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}"><button class="button button-light button-small" type="submit">দেখুন</button></form>
+    <div class="attendance-counts"><span class="count-chip count-present">উপস্থিত <strong>{{ counts.present }}</strong></span><span class="count-chip count-absent">অনুপস্থিত <strong>{{ counts.absent }}</strong></span><span class="count-chip count-late">দেরি <strong>{{ counts.late }}</strong></span></div>
+  </div>
+  {% if students %}
+  <form method="post">
+    {% csrf_token %}<input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+    <div class="bulk-toolbar"><span>{{ selected_date|date:"j F, Y" }} · {{ students|length }} জন শিক্ষার্থী</span><button class="button button-light button-small" type="button" id="mark-all-present">সবাইকে উপস্থিত</button></div>
+    <div class="attendance-year-tabs" data-attendance-year-tabs>
+      <div class="year-tabs" role="tablist" aria-label="বর্ষ অনুযায়ী শিক্ষার্থী">
+        {% for year_group in year_groups %}
+        <button class="year-tab{% if forloop.first %} active{% endif %}" type="button" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="attendance-year-{{ year_group.key }}" data-attendance-year="{{ year_group.key }}">{{ year_group.label }} <span>{{ year_group.students|length }}</span></button>
+        {% endfor %}
+      </div>
+      {% for year_group in year_groups %}
+      <section class="attendance-year-panel" id="attendance-year-{{ year_group.key }}" role="tabpanel" data-attendance-year-panel="{{ year_group.key }}"{% if not forloop.first %} hidden{% endif %}>
+        {% if year_group.students %}
+        <div class="table-wrap attendance-table-wrap"><table class="data-table attendance-table"><thead><tr><th>শিক্ষার্থী</th><th>আইডি</th><th>শ্রেণি/ব্যাচ</th><th>উপস্থিতির অবস্থা</th></tr></thead><tbody>
+          {% for student in year_group.students %}
+          {% with record=existing|get_item:student.pk %}
+          <tr><td><strong>{{ student.name }}</strong></td><td>{{ student.student_id }}</td><td>{{ student.class_name }}</td><td><div class="status-options">
+            <label class="status-choice status-present"><input type="radio" name="status_{{ student.pk }}" value="present" {% if record.status == 'present' %}checked{% endif %}><span>উপস্থিত</span></label>
+            <label class="status-choice status-absent"><input type="radio" name="status_{{ student.pk }}" value="absent" {% if record.status == 'absent' %}checked{% endif %}><span>অনুপস্থিত</span></label>
+            <label class="status-choice status-late"><input type="radio" name="status_{{ student.pk }}" value="late" {% if record.status == 'late' %}checked{% endif %}><span>দেরি</span></label>
+            {% if student.pk in sms_sent_attendance_ids %}<span class="sms-sent-indicator" title="এই তারিখের বর্তমান status-এর SMS BulkSMSBD গ্রহণ করেছে" aria-label="SMS পাঠানো হয়েছে">✓</span>{% endif %}
+          </div></td></tr>
+          {% endwith %}
+          {% endfor %}
+        </tbody></table></div>
+        {% else %}<div class="attendance-year-empty">এই বর্ষে সক্রিয় শিক্ষার্থী নেই।</div>{% endif %}
+      </section>
+      {% endfor %}
+    </div>
+    <div class="form-field" style="margin-top: 1.25rem; max-width: 24rem;">
+      <label for="notification-method">নোটিফিকেশন পাঠানোর মাধ্যম</label>
+      <select id="notification-method" name="notification_method" required>
+        <option value="whatsapp"{% if notification_method == 'whatsapp' %} selected{% endif %}>WhatsApp</option>
+        <option value="sms"{% if notification_method == 'sms' %} selected{% endif %}>SMS (BulkSMSBD)</option>
+      </select>
+      <small class="muted">{% if sms_enabled %}SMS System চালু—SMS বেছে save করলে অভিভাবকের সংরক্ষিত নম্বরে যাবে।{% else %}SMS System বন্ধ—SMS বেছে save করলেও message যাবে না।{% endif %} WhatsApp-এ দেরির জন্য approved template প্রয়োজন।</small>
+    </div>
+    <div class="form-actions"><span class="muted">যাদের অবস্থা বাছাই করবেন, শুধু তাদেরটাই সংরক্ষিত হবে ও নির্বাচিত মাধ্যমে নোটিফিকেশন যাবে।</span><button class="button button-primary" type="submit">উপস্থিতি সংরক্ষণ করুন <span>→</span></button></div>
+  </form>
+  {% else %}<div class="empty-state"><span>♙</span><strong>উপস্থিতি নেওয়ার মতো শিক্ষার্থী নেই</strong><p>আগে শিক্ষার্থী তালিকায় শিক্ষার্থী যোগ করুন।</p><a class="button button-primary button-small" href="{% url 'student_list' %}">শিক্ষার্থী যোগ করুন</a></div>{% endif %}
+</section>
+<script>
+  document.querySelectorAll('[data-attendance-year-tabs]').forEach((group) => {
+    const tabs = group.querySelectorAll('[data-attendance-year]');
+    const panels = group.querySelectorAll('[data-attendance-year-panel]');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const selectedYear = tab.dataset.attendanceYear;
+        tabs.forEach((item) => {
+          const selected = item === tab;
+          item.classList.toggle('active', selected);
+          item.setAttribute('aria-selected', String(selected));
+        });
+        panels.forEach((panel) => {
+          panel.hidden = panel.dataset.attendanceYearPanel !== selectedYear;
+        });
+      });
+    });
+  });
+
+  document.getElementById('mark-all-present')?.addEventListener('click', function () {
+    document.querySelectorAll('input[type="radio"][value="present"]').forEach((input) => { input.checked = true; });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}শিক্ষার্থী{% endblock %}
+{% block page_title %}শিক্ষার্থী{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">শিক্ষার্থী ব্যবস্থাপনা</span><h1>শিক্ষার্থীরা</h1><p>{% if can_add_students %}শিক্ষার্থীর তথ্য যোগ করুন, খুঁজুন এবং গুছিয়ে রাখুন।{% else %}শিক্ষার্থীদের তথ্য দেখুন ও প্রয়োজনমতো খুঁজে নিন।{% endif %}</p></div><span class="intro-count">{{ page_obj.paginator.count }} জন</span></section>
+<section class="{% if can_add_students %}content-grid management-grid{% else %}panel{% endif %}">
+  {% if can_add_students %}
+  <article class="panel form-panel">
+    <div class="panel-heading"><div><span class="eyebrow">নতুন নিবন্ধন</span><h2>শিক্ষার্থী যোগ করুন</h2></div><span class="form-step">＋</span></div>
+    <form method="post" class="stacked-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}
+      <div class="field-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}{% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}</div>
+      {% endfor %}
+      <button class="button button-primary button-full" type="submit">শিক্ষার্থী সংরক্ষণ করুন <span>→</span></button>
+    </form>
+    <p class="form-hint">শিক্ষার্থী আইডি অবশ্যই আলাদা হতে হবে। লগইন অ্যাকাউন্ট দিতে ইউজারনেম ও পাসওয়ার্ড দুটোই পূরণ করুন।</p>
+  </article>
+  {% endif %}
+  <article class="panel students-panel">
+    <div class="panel-heading"><div><span class="eyebrow">শিক্ষার্থী তালিকা</span><h2>সকল শিক্ষার্থী</h2></div></div>
+    <form method="get" class="search-form"><span>⌕</span><input type="search" name="q" value="{{ query }}" placeholder="নাম, আইডি বা ব্যাচ দিয়ে খুঁজুন"><button class="button button-light button-small" type="submit">খুঁজুন</button></form>
+    {% if students %}
+    <div class="student-list">
+      {% for student in students %}
+      <div class="student-row">
+        <span class="student-avatar avatar-tone-{{ forloop.counter|add:'2'|divisibleby:'5' }}">{{ student.name|slice:":1" }}</span>
+        <span class="student-info"><strong><a href="{% url 'student_detail' student.pk %}">{{ student.name }}</a></strong><small>{{ student.student_id }}{% if student.phone %} · {{ student.phone }}{% endif %}{% if can_add_students and student.guardian_phone %} · অভিভাবক: {{ student.guardian_phone }}{% endif %}{% if student.user_id %} · লগইন: {{ student.user.username }}{% endif %}</small></span>
+        <span class="class-pill">{{ student.get_year_group_display }}</span>
+        {% if can_add_students %}
+        <div class="student-admin-actions">
+          {% if not student.user_id %}<a class="student-account-link" href="{% url 'student_account' student.pk %}">লগইন দিন</a>{% endif %}
+          <a class="student-edit-link" href="{% url 'student_edit' student.pk %}">তথ্য বদলান</a>
+          <form method="post" action="{% url 'student_delete' student.pk %}" onsubmit="return confirm('এই শিক্ষার্থীর তথ্য, লগইন অ্যাকাউন্ট, উপস্থিতি ও পরীক্ষার ফলাফল স্থায়ীভাবে মুছে যাবে। আপনি কি নিশ্চিত?');">
+            {% csrf_token %}
+            <button type="submit" class="student-delete-link">মুছুন</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% if page_obj.has_other_pages %}
+    <nav class="student-pagination" aria-label="শিক্ষার্থীর তালিকার পৃষ্ঠা">
+      <span class="student-pagination-summary">{{ page_obj.start_index }}–{{ page_obj.end_index }} / {{ page_obj.paginator.count }}</span>
+      <div class="student-pagination-controls">
+        {% if page_obj.has_previous %}<a class="student-page-link" href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="আগের পৃষ্ঠা">←</a>{% else %}<span class="student-page-link disabled" aria-disabled="true">←</span>{% endif %}
+        {% for page_number in page_range %}
+          {% if page_number == page_obj.paginator.ELLIPSIS %}<span class="student-pagination-ellipsis" aria-hidden="true">{{ page_number }}</span>
+          {% elif page_number == page_obj.number %}<span class="student-page-link current" aria-current="page">{{ page_number }}</span>
+          {% else %}<a class="student-page-link" href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}page={{ page_number }}">{{ page_number }}</a>{% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}<a class="student-page-link" href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="পরের পৃষ্ঠা">→</a>{% else %}<span class="student-page-link disabled" aria-disabled="true">→</span>{% endif %}
+      </div>
+    </nav>
+    {% endif %}
+    {% else %}<div class="empty-state"><span>♙</span><strong>{% if query %}কোনো শিক্ষার্থী পাওয়া যায়নি{% else %}এখনো শিক্ষার্থী যোগ করা হয়নি{% endif %}</strong><p>{% if query %}অন্য নাম, আইডি বা ব্যাচ দিয়ে খুঁজুন।{% elif can_add_students %}বাম পাশের ফর্ম দিয়ে প্রথম শিক্ষার্থী যোগ করুন।{% else %}সুপার অ্যাডমিন শিক্ষার্থী যোগ করলে এখানে দেখা যাবে।{% endif %}</p></div>{% endif %}
+  </article>
+</section>
+{% if attendance_calendar_student %}
+  {% with attendance_calendar_students=attendance_students %}
+    {% include "students/partials/attendance_calendar.html" %}
+  {% endwith %}
+{% endif %}
+{% endblock %}

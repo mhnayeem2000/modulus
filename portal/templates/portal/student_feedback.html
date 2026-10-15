@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}মতামত ও সহায়তা{% endblock %}
+{% block page_title %}মতামত ও সহায়তা{% endblock %}
+{% block content %}
+<section class="feedback-intro">
+  <span class="feedback-intro-icon" aria-hidden="true">✦</span>
+  <div><span class="eyebrow">তোমার কথা আমাদের কাছে গুরুত্বপূর্ণ</span><h1>কীভাবে পড়াশোনায় আরও ভালোভাবে সাহায্য করতে পারি?</h1><p>ক্লাস, টপিক বা পড়ার কোনো সমস্যা জানাও। তোমার মতামত শুধু সুপার অ্যাডমিন দেখতে পারবেন।</p></div>
+</section>
+<section class="panel feedback-form-panel">
+  <form method="post" class="feedback-form">
+    {% csrf_token %}
+    <div class="field-group">
+      <label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
+      {{ form.category }}
+      {% for error in form.category.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+    </div>
+    <div class="field-group">
+      <label for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+      {{ form.message }}
+      <span class="field-help">একটু বিস্তারিত লিখলে বিষয়টি বুঝতে সুবিধা হবে।</span>
+      {% for error in form.message.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+    </div>
+    <button class="button button-primary" type="submit">মতামত পাঠাও <span>→</span></button>
+  </form>
+</section>
+{% endblock %}

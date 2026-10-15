@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}পরীক্ষা ও ফলাফল{% endblock %}
+{% block page_title %}পরীক্ষা ও ফলাফল{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">মূল্যায়ন ব্যবস্থাপনা</span><h1>পরীক্ষা ও ফলাফল</h1><p>পরীক্ষার বিবরণ তৈরি করুন, তারপর শিক্ষার্থীদের নম্বর যোগ করুন।</p></div></section>
+<section class="content-grid management-grid exam-management-grid">
+  <article class="panel form-panel">
+    <div class="panel-heading"><div><span class="eyebrow">পরীক্ষার বিবরণ</span><h2>নতুন পরীক্ষা তৈরি</h2></div><span class="form-step">＋</span></div>
+    <form method="post" class="stacked-form">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="field-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}{% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}</div>
+      {% endfor %}
+      <button class="button button-primary button-full" type="submit">পরীক্ষা তৈরি করুন <span>→</span></button>
+    </form>
+  </article>
+  <article class="panel exam-list-panel">
+    <div class="panel-heading"><div><span class="eyebrow">পরীক্ষার তালিকা</span><h2>সকল পরীক্ষা</h2></div><span class="intro-count">{{ exams|length }}টি</span></div>
+    {% if exams %}
+    <div class="exam-list">
+      {% for exam in exams %}
+      <article class="exam-card">
+        <div class="exam-card-top"><span class="exam-date-badge"><strong>{{ exam.exam_date|date:"d" }}</strong><small>{{ exam.exam_date|date:"M" }}</small></span><div class="exam-card-title"><h3>{{ exam.title }}</h3><p>{{ exam.get_year_group_display }} <span>·</span> {{ exam.exam_date|date:"j F, Y" }}</p></div><span class="marks-badge">{{ exam.total_marks }} নম্বর</span></div>
+        <div class="exam-details"><span><small>বিষয়</small>{{ exam.subject|default:"উল্লেখ নেই" }}</span><span><small>পত্র</small>{{ exam.paper }}</span><span><small>অধ্যায়</small>{{ exam.chapter }}</span><span><small>টপিক</small>{{ exam.topic }}</span></div>
+        <div class="exam-card-footer"><span>{{ exam.results.count }} জনের নম্বর দেওয়া হয়েছে</span><div><a class="button button-light button-small" href="{% url 'exam_edit' exam.pk %}">বিবরণ সংশোধন</a> <a class="button button-light button-small" href="{% url 'exam_results' exam.pk %}">নম্বর লিখুন <span>→</span></a></div></div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}<div class="empty-state"><span>▤</span><strong>এখনো পরীক্ষা তৈরি হয়নি</strong><p>বাম পাশের ফর্ম দিয়ে প্রথম পরীক্ষা যোগ করুন।</p></div>{% endif %}
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% regroup materials by subject as subject_groups %}
+{% if subject_groups %}
+  {% for subject_group in subject_groups %}
+  <section class="subject-group">
+    <div class="subject-heading">
+      <span class="subject-icon">▤</span>
+      <div><span class="eyebrow">বিষয়</span><h2>{{ subject_group.grouper|default:"অন্যান্য বিষয়" }}</h2></div>
+      <span class="subject-count">{{ subject_group.list|length }}টি উপকরণ</span>
+    </div>
+    {% regroup subject_group.list by paper as paper_groups %}
+    {% for paper_group in paper_groups %}
+    <div class="paper-group">
+      <h3>{{ paper_group.grouper|default:"পত্র উল্লেখ নেই" }}</h3>
+      {% regroup paper_group.list by chapter as chapter_groups %}
+      {% for chapter_group in chapter_groups %}
+      <div class="chapter-material-group">
+        <h4>{{ chapter_group.grouper|default:"অধ্যায় উল্লেখ নেই" }}</h4>
+        {% for material in chapter_group.list %}
+        <article class="material-card {% if material_kind == 'book' %}book-material-card{% endif %}">
+          <span class="material-file-icon">{% if material.file.name|lower|slice:"-4:" == ".pdf" %}PDF{% else %}ফাইল{% endif %}</span>
+          <div class="material-card-info">
+            <strong>{{ material.title }}</strong>
+            {% if material.description %}<small>{{ material.description }}</small>{% endif %}
+            <small>আপলোড: {{ material.created_at|date:"j F, Y" }}</small>
+          </div>
+          {% if material.file or material.external_url %}
+          <a class="button button-light button-small" href="{% url 'download_material' material.pk %}"{% if material.external_url and not material.file %} target="_blank" rel="noopener noreferrer"{% endif %}>
+            {% if material.file %}ডাউনলোড{% else %}খুলে দেখো{% endif %} <span>↗</span>
+          </a>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endfor %}
+{% else %}
+<div class="empty-state"><span>▧</span><strong>এই বিভাগে এখনো কিছু যোগ হয়নি</strong><p>শিক্ষক নতুন উপকরণ আপলোড করলে এখানে দেখতে পাবে।</p></div>
+{% endif %}

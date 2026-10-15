@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}ক্লাস ও রুটিন{% endblock %}
+{% block page_title %}ক্লাস ও রুটিন{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">{{ student.get_year_group_display }}</span><h1>ক্লাসের সময়সূচি</h1><p>কোন দিনে প্রথম ও দ্বিতীয় ক্লাস, শিক্ষক ও পড়ার বিষয়—সব এক নজরে।</p></div></section>
+<section class="panel weekly-routine-panel">
+  <div class="panel-heading"><div><span class="eyebrow">সাপ্তাহিক সময়সূচি</span><h2>তোমার ব্যাচের পূর্ণ রুটিন</h2></div></div>
+  <div class="weekly-routine-grid">
+    <div class="weekly-routine-header"><span>বার</span><span>১ম ক্লাস</span><span>২য় ক্লাস</span></div>
+    {% for day in weekday_rows %}
+    <div class="weekly-routine-row">
+      <div class="weekly-routine-day"><span class="weekly-day-mark">{{ forloop.counter|stringformat:"02d" }}</span><strong>{{ day.label }}</strong></div>
+      <div class="weekly-routine-slot">
+        {% if day.first_class %}
+        {% if day.first_class.is_revision %}<span class="routine-revision-badge">রিভিশন ক্লাস</span>{% endif %}
+        <strong>{{ day.first_class.subject }}{% if day.first_class.paper %} · {{ day.first_class.paper }}{% endif %}</strong>
+        <span>{{ day.first_class.teacher.get_full_name|default:day.first_class.teacher.username }}</span>
+        <small>{{ day.first_class.start_time|time:"g:i A" }}–{{ day.first_class.end_time|time:"g:i A" }}{% if day.first_class.chapter %} · {{ day.first_class.chapter }}{% endif %}</small>
+        {% else %}<span class="weekly-routine-empty">কোনো ক্লাস নেই</span>{% endif %}
+      </div>
+      <div class="weekly-routine-slot">
+        {% if day.later_classes %}
+          {% with routine=day.later_classes.0 %}
+          {% if routine.is_revision %}<span class="routine-revision-badge">রিভিশন ক্লাস</span>{% endif %}
+          <strong>{{ routine.subject }}{% if routine.paper %} · {{ routine.paper }}{% endif %}</strong>
+          <span>{{ routine.teacher.get_full_name|default:routine.teacher.username }}</span>
+          <small>{{ routine.start_time|time:"g:i A" }}–{{ routine.end_time|time:"g:i A" }}{% if routine.chapter %} · {{ routine.chapter }}{% endif %}</small>
+          {% endwith %}
+          {% for routine in day.later_classes|slice:"1:" %}<div class="weekly-extra-class"><span>{% if routine.is_revision %}রিভিশন ক্লাস{% else %}অতিরিক্ত ক্লাস{% endif %}</span><strong>{{ routine.subject }}{% if routine.paper %} · {{ routine.paper }}{% endif %}</strong><small>{{ routine.teacher.get_full_name|default:routine.teacher.username }} · {{ routine.start_time|time:"g:i A" }}–{{ routine.end_time|time:"g:i A" }}{% if routine.chapter %} · {{ routine.chapter }}{% endif %}</small></div>{% endfor %}
+        {% else %}<span class="weekly-routine-empty">{% if day.first_class %}কোনো দ্বিতীয় ক্লাস নেই{% else %}কোনো ক্লাস নেই{% endif %}</span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+<section class="content-grid student-dashboard-grid">
+  <article class="panel"><div class="panel-heading"><div><span class="eyebrow">পড়ার অগ্রগতি</span><h2>সাম্প্রতিক ক্লাস</h2></div></div>
+    {% if sessions %}<div class="student-activity-list">{% for session in sessions %}<div class="student-activity-row session-activity-row"><span class="session-date"><strong>{{ session.date|date:"d" }}</strong><small>{{ session.date|date:"M" }}</small></span><span class="activity-description"><strong>{{ session.subject }}{% if session.paper %} · {{ session.paper }}{% endif %}</strong><small>{{ session.chapter }}{% if session.topic %} · {{ session.topic }}{% endif %}</small></span></div>{% endfor %}</div>{% else %}<div class="empty-state"><span>▤</span><strong>এখনো কোনো ক্লাসের তথ্য যোগ হয়নি</strong><p>শিক্ষক ক্লাসের তথ্য যোগ করলে এখানে পাবে।</p></div>{% endif %}
+  </article>
+</section>
+{% endblock %}

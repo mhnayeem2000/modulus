@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}শিক্ষকবৃন্দ{% endblock %}
+{% block page_title %}শিক্ষক ব্যবস্থাপনা{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">সুপার অ্যাডমিন · শিক্ষকবৃন্দ</span><h1>শিক্ষকদের সব তথ্য</h1><p>শিক্ষক অ্যাকাউন্ট তৈরি করুন এবং মাস ধরে কার কয়টি ক্লাস ও পরীক্ষা হয়েছে দেখুন।</p></div></section>
+<section class="panel support-session-report">
+  <div class="panel-heading">
+    <div><span class="eyebrow">শিক্ষক সহায়তা কার্যক্রম</span><h2>সাপোর্ট সেশনে শিক্ষকদের যোগদান</h2><p class="muted">শিক্ষকের যোগদানের বাটনে ক্লিক করা প্রতিটি আলাদা দিন গণনা করা হয়েছে।</p></div>
+    <div class="support-session-summary"><span><strong>{{ support_session_today_joins }}</strong> আজ</span><span><strong>{{ support_session_total_joins }}</strong> মোট যোগদান</span></div>
+  </div>
+  {% if support_session_teachers %}
+  <div class="support-session-table-wrap">
+    <table class="support-session-table">
+      <thead><tr><th>শিক্ষক</th><th>মোট যোগদানের দিন</th><th>সর্বশেষ যোগদান</th><th>আজকের অবস্থা</th></tr></thead>
+      <tbody>
+        {% for teacher in support_session_teachers %}
+        <tr><td><strong>{{ teacher.get_full_name|default:teacher.username }}</strong><small>{{ teacher.email|default:teacher.username }}</small></td><td><span class="support-session-day-count">{{ teacher.support_session_days }}</span> দিন</td><td>{% if teacher.last_support_session_date %}{{ teacher.last_support_session_date|date:"j F Y" }}{% else %}<span class="muted">এখনো যোগ দেননি</span>{% endif %}</td><td>{% if teacher.support_session_joined_today %}<span class="support-session-joined">✓ যোগ দিয়েছেন{% else %}<span class="support-session-not-joined">আজ যোগ দেননি{% endif %}</span></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<div class="empty-state compact-empty"><span>✦</span><strong>কোনো শিক্ষক অ্যাকাউন্ট নেই</strong><p>শিক্ষক যোগ হলে তাদের সাপোর্ট সেশনের তথ্য এখানে দেখা যাবে।</p></div>{% endif %}
+</section>
+<section class="panel month-filter-panel"><form method="get" class="date-picker-form"><label for="admin-month">কোন মাসের কার্যক্রম দেখতে চান</label><input id="admin-month" type="month" name="month" value="{{ month_value }}"><button class="button button-light button-small" type="submit">দেখুন</button></form><span class="month-label-pill">{{ month_label }}</span></section>
+<section class="content-grid management-grid admin-management-grid">
+  <article class="panel form-panel"><div class="panel-heading"><div><span class="eyebrow">শিক্ষক অ্যাকাউন্ট</span><h2>নতুন শিক্ষক যোগ করুন</h2></div><span class="form-step">＋</span></div>
+    <form method="post" class="stacked-form">{% csrf_token %}
+      {% for field in form %}<div class="field-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}</div>{% endfor %}
+      <button class="button button-primary button-full" type="submit">শিক্ষক অ্যাকাউন্ট তৈরি করুন <span>→</span></button>
+    </form>
+    <p class="form-hint">শিক্ষককে ইউজারনেম ও প্রাথমিক পাসওয়ার্ড নিরাপদে জানিয়ে দিন।</p>
+  </article>
+  <div class="teacher-report-list">
+    {% if teachers %}{% for item in teachers %}
+    <details class="panel teacher-report-card">
+      <summary class="teacher-report-summary">
+        <span class="teacher-avatar">{{ item.teacher.first_name|default:item.teacher.username|slice:":1" }}</span>
+        <span class="teacher-report-name"><strong>{{ item.teacher.get_full_name|default:item.teacher.username }}</strong></span>
+        <span class="teacher-summary-metric"><strong>{{ item.class_count }}</strong><small>{{ month_label }}-এ ক্লাস</small></span>
+        <span class="teacher-summary-metric"><strong>{{ item.exam_count }}</strong><small>নেওয়া পরীক্ষা</small></span>
+        <span class="teacher-expand-icon" aria-hidden="true"></span>
+      </summary>
+      <div class="teacher-report-details">
+      <div class="teacher-report-heading"><span class="teacher-report-name"><small>{{ item.teacher.username }}{% if item.teacher.email %} · {{ item.teacher.email }}{% endif %}{% if item.phone %} · {{ item.phone }}{% endif %}</small></span><span class="teacher-status">সক্রিয়</span></div>
+      <div class="teacher-report-stats"><div><strong>{{ item.class_count }}</strong><span>{{ month_label }}-এ ক্লাস</span></div><div><strong>{{ item.exam_count }}</strong><span>নেওয়া পরীক্ষা</span></div><div><strong>{{ item.attendance_count }}</strong><span>অনুমোদিত উপস্থিতি</span></div><div><strong>{{ item.classes|length }}</strong><span>পড়ানো ব্যাচ</span></div></div>
+      <div class="year-filter-group" data-year-filter-group>
+        <div class="year-tabs" role="tablist" aria-label="{{ item.teacher.get_full_name|default:item.teacher.username }}-এর বর্ষভিত্তিক কার্যক্রম">
+          <button class="year-tab active" type="button" role="tab" aria-selected="true" data-year-filter="all">সব</button>
+          {% for key,label in year_groups %}<button class="year-tab" type="button" role="tab" aria-selected="false" data-year-filter="{{ key }}">{{ label }}</button>{% endfor %}
+        </div>
+        <div class="teacher-year-metrics">
+          {% for year in item.year_stats %}<div class="teacher-year-metric year-filter-item" data-academic-year="{{ year.key }}"><strong>{{ year.label }}</strong><span>{{ year.class_count }}টি ব্যাচ · {{ year.session_count }}টি ক্লাস · {{ year.exam_count }}টি পরীক্ষা · {{ year.attendance_count }} দিন অনুমোদিত উপস্থিতি</span></div>{% endfor %}
+        </div>
+        <div class="teacher-report-section"><h3>এই মাসে যে ব্যাচগুলোতে ক্লাস নিয়েছেন</h3>{% if item.classes %}<div class="report-class-pills">{% for class_item in item.classes %}<span class="year-filter-item" data-academic-year="{{ class_item.year_key }}">{{ class_item.class_name }}</span>{% endfor %}</div>{% else %}<p class="muted">এই মাসে কোনো ক্লাসের তথ্য যোগ হয়নি।</p>{% endif %}</div>
+        <div class="teacher-report-section"><h3>পড়ানো অধ্যায় ও বিষয়</h3>{% if item.session_chapters %}<div class="chapter-report-list">{% for chapter in item.session_chapters %}<div class="chapter-report-row year-filter-item" data-academic-year="{{ chapter.year_key }}"><span><strong>{{ chapter.class_name }} · {{ chapter.subject }}</strong><small>{{ chapter.chapter }}</small></span><span class="count-chip count-present">{{ chapter.total }}টি ক্লাস</span></div>{% endfor %}</div>{% else %}<p class="muted">এই মাসে ক্লাসের অধ্যায় যোগ হয়নি।</p>{% endif %}</div>
+        <div class="teacher-report-section"><h3>নেওয়া পরীক্ষা ও অধ্যায়</h3>{% if item.exam_chapters %}<div class="chapter-report-list">{% for chapter in item.exam_chapters %}<div class="chapter-report-row year-filter-item" data-academic-year="{{ chapter.year_key }}"><span><strong>{{ chapter.class_name }} · {{ chapter.paper }}</strong><small>{{ chapter.chapter }}</small></span><span class="count-chip count-purple">{{ chapter.total }}টি পরীক্ষা</span></div>{% endfor %}</div>{% else %}<p class="muted">এই মাসে কোনো পরীক্ষা নেওয়া হয়নি।</p>{% endif %}</div>
+      </div>
+      <div class="teacher-admin-actions">
+        <a href="{% url 'admin_teacher_edit' item.teacher.pk %}" class="button button-light button-small">তথ্য পরিবর্তন</a>
+        <form method="post" action="{% url 'admin_teacher_delete' item.teacher.pk %}" onsubmit="return confirm('এই শিক্ষকের অ্যাকাউন্ট, ক্লাস রেকর্ড, রুটিন ও উপস্থিতির তথ্য স্থায়ীভাবে মুছে যাবে। পরীক্ষা ও ফলাফল থাকবে, তবে শিক্ষকের পরিচয় মুছে যাবে। আপনি কি নিশ্চিত?');">
+          {% csrf_token %}
+          <button type="submit" class="button button-small teacher-delete-button">শিক্ষক মুছুন</button>
+        </form>
+      </div>
+      </div>
+    </details>
+    {% endfor %}{% else %}<div class="panel empty-state"><span>♙</span><strong>এখনো কোনো শিক্ষক নেই</strong><p>বাম পাশের ফর্ম দিয়ে শিক্ষক অ্যাকাউন্ট তৈরি করুন।</p></div>{% endif %}
+  </div>
+</section>
+<script>
+  document.querySelectorAll('[data-year-filter-group]').forEach((group) => {
+    const tabs = group.querySelectorAll('[data-year-filter]');
+    const items = group.querySelectorAll('.year-filter-item');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const selectedYear = tab.dataset.yearFilter;
+        tabs.forEach((item) => {
+          const selected = item === tab;
+          item.classList.toggle('active', selected);
+          item.setAttribute('aria-selected', String(selected));
+        });
+        items.forEach((item) => {
+          item.hidden = selectedYear !== 'all' && item.dataset.academicYear !== selectedYear;
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}শিক্ষার্থী লগইন{% endblock %}
+{% block page_title %}শিক্ষার্থীর লগইন{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{% url 'student_list' %}">শিক্ষার্থী</a><span>›</span><span>লগইন তৈরি</span></div>
+<section class="content-grid management-grid">
+  <article class="panel form-panel">
+    <div class="panel-heading"><div><span class="eyebrow">{{ student.get_year_group_display }} · {{ student.student_id }}</span><h2>{{ student.name }}</h2></div><span class="form-step">♙</span></div>
+    {% if account_exists %}
+    <div class="alert alert-success"><strong>লগইন অ্যাকাউন্ট তৈরি আছে।</strong><br>ইউজারনেম: {{ student.user.username }}</div>
+    <a class="button button-light" href="{% url 'student_list' %}">শিক্ষার্থী তালিকায় ফিরুন</a>
+    {% elif can_create_account %}
+    <p class="muted">শিক্ষার্থী তার ইউজারনেম ও পাসওয়ার্ড দিয়ে লগইন করে নিজের ক্লাস, শিট ও ফলাফল দেখতে পারবে।</p>
+    <form method="post" class="stacked-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}<div class="field-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}</div>{% endfor %}
+      <button class="button button-primary button-full" type="submit">লগইন তৈরি করুন <span>→</span></button>
+    </form>
+    {% else %}
+    <div class="alert alert-info">শিক্ষার্থীর লগইন অ্যাকাউন্ট তৈরি করতে সুপার অ্যাডমিনের অনুমতি প্রয়োজন।</div>
+    {% endif %}
+  </article>
+  <aside class="panel account-help-panel"><span class="subject-icon">✦</span><h2>নিরাপদে লগইন দিন</h2><p>প্রতিটি শিক্ষার্থীর জন্য আলাদা ইউজারনেম দিন। প্রাথমিক পাসওয়ার্ডটি শিক্ষার্থীকে ব্যক্তিগতভাবে জানান, আর প্রথম লগইনের পর পাসওয়ার্ড বদলাতে বলুন।</p><p class="muted">কমপক্ষে ৮ অক্ষরের শক্তিশালী পাসওয়ার্ড ব্যবহার করুন।</p></aside>
+</section>
+{% endblock %}

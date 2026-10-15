@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}স্টাডি রিসোর্স{% endblock %}
+{% block page_title %}পড়ার উপকরণ{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <span class="eyebrow">{{ student.get_year_group_display }} · তোমার জন্য</span>
+    <h1>স্টাডি রিসোর্স</h1>
+    <p>ক্লাস শিট, বই, গুরুত্বপূর্ণ ফাইল এবং অধ্যায়ভিত্তিক PDF—সব এক জায়গায়।</p>
+  </div>
+  <div class="books-total"><strong>{{ book_count }}</strong><span>টি PDF অধ্যায়</span></div>
+</section>
+
+{% include "portal/partials/student_resource_tabs.html" %}
+
+<section class="resource-tab-panel panel materials-panel" id="resource-panel-sheet" role="tabpanel" aria-labelledby="resource-tab-sheet" data-resource-panel="sheet" {% if selected_kind != 'sheet' %}hidden{% endif %}>
+  {% with materials=sheet_materials material_kind="sheet" %}
+  {% include "portal/partials/student_material_cards.html" %}
+  {% endwith %}
+</section>
+<section class="resource-tab-panel panel materials-panel" id="resource-panel-book" role="tabpanel" aria-labelledby="resource-tab-book" data-resource-panel="book" {% if selected_kind != 'book' %}hidden{% endif %}>
+  {% with materials=book_materials material_kind="book" %}
+  {% include "portal/partials/student_material_cards.html" %}
+  {% endwith %}
+</section>
+<section class="resource-tab-panel panel materials-panel" id="resource-panel-important" role="tabpanel" aria-labelledby="resource-tab-important" data-resource-panel="important" {% if selected_kind != 'important' %}hidden{% endif %}>
+  {% with materials=important_materials material_kind="important" %}
+  {% include "portal/partials/student_material_cards.html" %}
+  {% endwith %}
+</section>
+<section class="resource-tab-panel" id="resource-panel-pdf" role="tabpanel" aria-labelledby="resource-tab-pdf" data-resource-panel="pdf" {% if selected_kind != 'pdf' %}hidden{% endif %}>
+  {% include "portal/partials/student_chapter_pdfs.html" %}
+</section>
+<script defer src="{% static 'js/student-resource-tabs.js' %}"></script>
+{% endblock %}

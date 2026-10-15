@@ -1,0 +1,42 @@
+<nav class="books-section-nav" aria-label="বিষয় বেছে নিন">
+  {% for section in book_sections %}
+  <a href="#book-section-{{ forloop.counter }}">{{ section.title }} · {{ section.subtitle }}</a>
+  {% endfor %}
+</nav>
+
+<div class="student-book-sections">
+  {% for section in book_sections %}
+  <section class="student-book-section books-theme-{{ section.theme }}" id="book-section-{{ forloop.counter }}">
+    <header class="student-book-section-heading">
+      <span class="student-book-section-icon" aria-hidden="true">{{ section.icon }}</span>
+      <div>
+        <span class="eyebrow">{{ section.subtitle }}</span>
+        <h2>{{ section.title }}</h2>
+      </div>
+      <span class="student-book-section-count">{{ section.chapters|length }} অধ্যায়</span>
+    </header>
+    <div class="student-book-grid">
+      {% for chapter, url in section.chapters %}
+      <article class="student-book-card{% if not url %} student-book-card-unavailable{% endif %}">
+        <span class="student-book-index">{{ forloop.counter|stringformat:"02d" }}</span>
+        <div class="student-book-info">
+          <h3>{{ chapter }}</h3>
+          {% if url %}
+          <span class="student-book-format"><span aria-hidden="true">▤</span> PDF অধ্যায়</span>
+          {% else %}
+          <span class="student-book-format is-unavailable">PDF লিংক শিগগিরই যোগ হবে</span>
+          {% endif %}
+        </div>
+        {% if url %}
+        <a class="student-book-open" href="{{ url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ chapter }} PDF খুলুন">
+          <span>PDF খুলুন</span><span aria-hidden="true">↗</span>
+        </a>
+        {% else %}
+        <span class="student-book-open is-disabled" aria-disabled="true">শিগগিরই</span>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>

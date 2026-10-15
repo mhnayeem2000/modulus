@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load coaching_tags %}
+{% block title %}নম্বর এন্ট্রি{% endblock %}
+{% block page_title %}পরীক্ষার ফলাফল{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{% url 'exam_list' %}">পরীক্ষা ও ফলাফল</a><span>›</span><span>নম্বর এন্ট্রি</span></div>
+<section class="page-intro"><div><span class="eyebrow">{{ exam.get_year_group_display }} · {{ exam.exam_date|date:"j F, Y" }}</span><h1>{{ exam.title }}</h1><p>{{ exam.subject }} <span>·</span> {{ exam.paper }} <span>·</span> {{ exam.chapter }} <span>·</span> {{ exam.topic }}</p></div><span class="marks-badge marks-badge-large">পূর্ণমান {{ exam.total_marks }}</span></section>
+{% if saved %}<div class="alert alert-success" role="status">পরীক্ষার নম্বর সফলভাবে সংরক্ষণ হয়েছে।</div>{% endif %}
+{% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+<section class="panel results-panel">
+  <div class="panel-heading"><div><span class="eyebrow">নম্বরপত্র</span><h2>শিক্ষার্থীদের প্রাপ্ত নম্বর</h2><p class="muted">নম্বর ০ থেকে {{ exam.total_marks }}-এর মধ্যে লিখুন। ফাঁকা রাখলে কোনো পরিবর্তন হবে না।{% if sms_enabled %} নম্বর প্রথমবার দিলে বা পরিবর্তন করলে অভিভাবককে বাংলা ও English মিলিয়ে সর্বোচ্চ ১৬০ অক্ষরের SMS যাবে।{% else %} SMS System বন্ধ—নম্বর save হবে, SMS যাবে না।{% endif %}</p></div><span class="intro-count">{{ students|length }} জন</span></div>
+  {% if students %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="table-wrap"><table class="data-table result-table"><thead><tr><th>শিক্ষার্থী</th><th>আইডি</th><th>শ্রেণি/ব্যাচ</th><th>প্রাপ্ত নম্বর / {{ exam.total_marks }}</th></tr></thead><tbody>
+    {% for student in students %}{% with result=result_map|get_item:student.pk %}
+    <tr><td><strong>{{ student.name }}</strong></td><td>{{ student.student_id }}</td><td>{{ student.get_year_group_display }}</td><td><input class="marks-input" type="number" name="marks_{{ student.pk }}" min="0" max="{{ exam.total_marks }}" step="0.01" value="{{ result.marks|default_if_none:'' }}" placeholder="নম্বর লিখুন" aria-label="{{ student.name }}-এর প্রাপ্ত নম্বর"></td></tr>
+    {% endwith %}{% endfor %}
+    </tbody></table></div>
+    <div class="form-actions"><a class="button button-light" href="{% url 'exam_list' %}">ফিরে যান</a><button class="button button-primary" type="submit">নম্বর সংরক্ষণ করুন <span>→</span></button></div>
+  </form>
+  {% else %}<div class="empty-state"><span>♙</span><strong>এই ব্যাচে কোনো সক্রিয় শিক্ষার্থী নেই</strong><p>পরীক্ষার শ্রেণি/ব্যাচের সঙ্গে শিক্ষার্থীর শ্রেণি/ব্যাচ মিলিয়ে নিন।</p><a class="button button-light button-small" href="{% url 'student_list' %}">শিক্ষার্থী দেখুন</a></div>{% endif %}
+</section>
+{% endblock %}

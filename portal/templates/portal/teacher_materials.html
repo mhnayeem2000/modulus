@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}শিট ও বই{% endblock %}
+{% block page_title %}শিক্ষাসামগ্রী{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">শিক্ষার্থীদের জন্য</span><h1>শিট, বই ও জরুরি ফাইল</h1><p>ফাইল যোগ করুন—শিক্ষার্থীরা নিজেদের ড্যাশবোর্ড থেকে বিষয়, পত্র ও অধ্যায় ধরে পাবে।</p></div></section>
+<section class="content-grid management-grid materials-management-grid">
+  <article class="panel form-panel"><div class="panel-heading"><div><span class="eyebrow">নতুন উপকরণ</span><h2>ফাইল আপলোড করুন</h2></div><span class="form-step">＋</span></div>
+    <form method="post" enctype="multipart/form-data" class="stacked-form">{% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}<div class="field-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}{% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}</div>{% endfor %}
+      <p class="upload-note">PDF, Word, PowerPoint, Excel ও ছবি · সর্বোচ্চ ২০ MB। ফাইল আপলোড না করে লিংকও দিতে পারবেন।</p>
+      <button class="button button-primary button-full" type="submit">শিক্ষার্থীদের জন্য প্রকাশ করুন <span>→</span></button>
+    </form>
+  </article>
+  <article class="panel"><div class="panel-heading"><div><span class="eyebrow">আপলোড করা হয়েছে</span><h2>শিক্ষার্থীরা যা দেখতে পাবে</h2></div><span class="intro-count">{{ materials|length }}টি</span></div>
+    {% if materials %}<div class="student-activity-list">{% for material in materials %}<div class="student-activity-row teacher-material-row"><span class="material-mini-icon">▧</span><span class="activity-description"><strong>{{ material.title }}</strong><small>{{ material.get_kind_display }} · {{ material.subject }} · {{ material.paper }} · {{ material.chapter }}</small><small>{% if material.year_group %}{{ material.get_year_group_display }}{% else %}সব ব্যাচ{% endif %} · {{ material.created_at|date:"j F, Y" }}</small></span><a class="button button-light button-small" href="{% url 'download_material' material.pk %}">{% if material.file %}ফাইল দেখুন{% else %}লিংক খুলুন{% endif %}</a></div>{% endfor %}</div>{% else %}<div class="empty-state"><span>▧</span><strong>এখনো কোনো উপকরণ আপলোড হয়নি</strong><p>আপলোড করলে শিক্ষার্থীরা তাদের ড্যাশবোর্ড থেকে পেয়ে যাবে।</p></div>{% endif %}
+  </article>
+</section>
+{% endblock %}

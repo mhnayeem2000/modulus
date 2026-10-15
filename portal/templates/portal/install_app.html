@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Install App{% endblock %}
+{% block page_title %}Install App{% endblock %}
+{% block content %}
+<main class="install-app-page" data-install-app-page>
+  <section class="install-hero" aria-labelledby="install-page-title">
+    <div class="install-hero-brand">
+      <span class="install-app-icon"><img src="{% static 'images/Nav-192.png' %}" alt="Modulus Edu app icon"></span>
+      <span class="install-pwa-badge"><span aria-hidden="true">✦</span> Progressive Web App</span>
+    </div>
+    <div class="install-hero-copy">
+      <span class="eyebrow">আপনার শেখার সঙ্গী</span>
+      <h1 id="install-page-title">Install Our App</h1>
+      <p>Get faster access to your dashboard directly from your home screen.</p>
+      <div class="install-benefits" aria-label="অ্যাপ ব্যবহারের সুবিধা">
+        <span><i aria-hidden="true">✓</i> এক ট্যাপে প্রবেশ</span>
+        <span><i aria-hidden="true">✓</i> অ্যাপের মতো অভিজ্ঞতা</span>
+        <span><i aria-hidden="true">✓</i> সবসময় হাতের কাছে</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="install-state-banner" data-installed-banner role="status" aria-live="polite" hidden>
+    <span class="install-state-icon" aria-hidden="true">✓</span>
+    <span><strong>অ্যাপটি ইনস্টল করা আছে</strong><small>আপনি এখন হোম স্ক্রিন থেকেই Modulus Edu খুলতে পারবেন।</small></span>
+  </div>
+  <p class="install-device-note" data-device-note aria-live="polite">আপনার ডিভাইসের জন্য উপযুক্ত পদ্ধতিটি বেছে নিন।</p>
+
+  <section class="install-options" aria-label="অ্যাপ ইনস্টল করার পদ্ধতি">
+    <article class="install-option-card install-android-card">
+      <div class="install-option-heading">
+        <span class="install-platform-icon android-platform-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" focusable="false"><path d="M9.1 11.2 6.8 7.3m16.1 3.9 2.3-3.9M8 13.2h16v10.1a2 2 0 0 1-2 2h-1.3v3.1a1.8 1.8 0 0 1-3.6 0v-3.1h-2.2v3.1a1.8 1.8 0 0 1-3.6 0v-3.1H10a2 2 0 0 1-2-2V13.2Zm-.2 1.3v7.6a1.8 1.8 0 0 1-3.6 0v-7.6a1.8 1.8 0 0 1 3.6 0Zm20 0v7.6a1.8 1.8 0 0 1-3.6 0v-7.6a1.8 1.8 0 0 1 3.6 0ZM10 11.7a6 6 0 0 1 12 0H10Z" fill="currentColor"/><circle cx="13" cy="15.7" r=".8" fill="#fff"/><circle cx="19" cy="15.7" r=".8" fill="#fff"/></svg>
+        </span>
+        <span class="install-platform-label"><span>ANDROID</span><h2>Install on Android</h2></span>
+      </div>
+      <p class="install-option-description">Install the app on your Android phone for quick, convenient access.</p>
+      <button class="button button-primary install-native-button" type="button" data-install-button hidden>
+        <span aria-hidden="true">⇩</span> Install App
+      </button>
+      <p class="install-android-fallback" data-android-fallback>এই ব্রাউজারে সরাসরি ইনস্টল অপশন পাওয়া গেলে এখানে দেখানো হবে।</p>
+      <p class="install-status" data-install-status role="status" aria-live="polite" hidden></p>
+    </article>
+
+    <article class="install-option-card install-ios-card">
+      <div class="install-option-heading">
+        <span class="install-platform-icon ios-platform-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" focusable="false"><rect x="8" y="3.5" width="16" height="25" rx="3.3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 7h6M14 24.5h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16 11v7m-3-3 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="install-platform-label"><span>IPHONE &amp; IPAD</span><h2>Install on iPhone</h2></span>
+      </div>
+      <p class="install-option-description">Add the app to your Home Screen for an app-like experience.</p>
+      <button class="button button-light install-guide-toggle" type="button" data-guide-toggle aria-expanded="false" aria-controls="ios-install-guide">
+        How to Install <span aria-hidden="true">→</span>
+      </button>
+      <div class="ios-install-guide" id="ios-install-guide" data-install-guide hidden>
+        <p class="install-guide-intro">Safari থেকে নিচের ধাপগুলো অনুসরণ করুন:</p>
+        <ol class="install-steps">
+          <li><span>১</span><div><strong>Safari-তে ওয়েবসাইট খুলুন</strong><small>Facebook বা Messenger-এর ভেতরের browser হলে Safari-তে খুলুন।</small></div></li>
+          <li><span>২</span><div><strong>Share button-এ ট্যাপ করুন</strong><small aria-label="Share icon">
+            <svg class="install-share-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 12V3m0 0L6.8 6.2M10 3l3.2 3.2M4.5 10v5.2c0 .7.6 1.3 1.3 1.3h8.4c.7 0 1.3-.6 1.3-1.3V10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            স্ক্রিনের Share আইকনটি চাপুন।
+          </small></div></li>
+          <li><span>৩</span><div><strong>Add to Home Screen বাছুন</strong><small>Share menu-তে অপশনটি খুঁজে নিন।</small></div></li>
+          <li><span>৪</span><div><strong>Open as Web App চালু করুন</strong><small>অপশনটি থাকলে এটি অন করুন।</small></div></li>
+          <li><span>৫</span><div><strong>Add-এ ট্যাপ করুন</strong><small>এখন Home Screen থেকে অ্যাপটি খুলুন।</small></div></li>
+        </ol>
+        <p class="install-ios-note">iPhone/iPad-এ ওয়েবসাইট নিজে থেকে Home Screen-এ যোগ হতে পারে না—Safari-তে আপনাকেই ধাপগুলো সম্পন্ন করতে হবে।</p>
+      </div>
+    </article>
+  </section>
+
+  <aside class="install-browser-note" data-browser-note aria-live="polite">
+    <span class="install-browser-note-icon" aria-hidden="true">ⓘ</span>
+    <p data-browser-note-copy>Install option না দেখালে browser menu-তে “Install app” বা “Add to Home screen” খুঁজুন।</p>
+  </aside>
+</main>
+<script defer src="{% static 'js/install-app.js' %}?v=20261015-1"></script>
+{% endblock %}

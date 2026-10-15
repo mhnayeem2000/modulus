@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}ড্যাশবোর্ড{% endblock %}
+{% block page_title %}ড্যাশবোর্ড{% endblock %}
+{% block content %}
+<section class="welcome-banner">
+  <div>
+    <span class="eyebrow">আজকের সারসংক্ষেপ</span>
+    <h1>আসসালামু আলাইকুম, {{ request.user.get_short_name|default:request.user.username }} 👋</h1>
+    <p>আপনার কোচিংয়ের আজকের কার্যক্রম এক নজরে দেখে নিন।</p>
+  </div>
+  <div class="welcome-date"><span class="date-icon">◷</span><span><strong>{{ today|date:"l" }}</strong><small>{{ today|date:"j F, Y" }}</small></span></div>
+</section>
+
+<section class="stats-grid" aria-label="সারসংক্ষেপ">
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-blue">♙</span><span class="stat-caption">সক্রিয় শিক্ষার্থী</span></div><strong class="stat-number">{{ student_count }}</strong><span class="stat-foot">মোট নিবন্ধিত শিক্ষার্থী</span></article>
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-green">✓</span><span class="stat-caption">আজ আমার উপস্থিতি</span></div><strong class="stat-number stat-status">{{ today_attendance_label }}</strong><span class="stat-foot">সুপার অ্যাডমিনের যাচাই অনুযায়ী</span></article>
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-purple">▤</span><span class="stat-caption">মোট পরীক্ষা</span></div><strong class="stat-number">{{ exam_count }}</strong><span class="stat-foot">আপনার তৈরি পরীক্ষা</span></article>
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-orange">↗</span><span class="stat-caption">মাসিক উপস্থিতির হার</span></div><strong class="stat-number">{{ attendance_rate }}<small>%</small></strong><span class="stat-foot">{{ month_label }} · {{ month_present }} উপস্থিত / {{ month_absent }} অনুপস্থিত</span></article>
+</section>
+
+<section class="panel teacher-month-panel">
+  <div class="panel-heading"><div><span class="eyebrow">আপনার মাসিক কাজ</span><h2>{{ month_label }}-এর ক্লাস ও পরীক্ষা</h2><p class="muted">কোন ব্যাচে কী পড়িয়েছেন এবং কয়টি পরীক্ষা নিয়েছেন</p></div><a class="button button-light button-small" href="{% url 'class_management' %}">ক্লাস ও রুটিন <span>→</span></a></div>
+  <div class="teacher-month-stats"><div><strong>{{ monthly_classes }}</strong><span>{{ month_label }}-এ সম্পন্ন ক্লাস</span></div><div><strong>{{ today_completed_classes }}</strong><span>আজ সম্পন্ন ক্লাস</span></div><div><strong>{{ monthly_exam_count }}</strong><span>নেওয়া পরীক্ষা</span></div><div><strong>{{ monthly_teacher_attendance }}</strong><span>অনুমোদিত উপস্থিতি</span></div></div>
+  <div class="year-filter-group" data-year-filter-group>
+    <div class="year-tabs" role="tablist" aria-label="বর্ষ অনুযায়ী মাসিক ক্লাস ও পরীক্ষার হিসাব">
+      <button class="year-tab active" type="button" role="tab" aria-selected="true" data-year-filter="all">সব</button>
+      {% for key,label in year_groups %}<button class="year-tab" type="button" role="tab" aria-selected="false" data-year-filter="{{ key }}">{{ label }}</button>{% endfor %}
+    </div>
+    <div class="teacher-year-report">
+      <section class="teacher-year-section"><h3>এই মাসে পরিচালিত ক্লাস</h3>
+        {% if monthly_class_groups %}<div class="chapter-report-list">{% for item in monthly_class_groups %}<div class="chapter-report-row year-filter-item" data-academic-year="{{ item.year_key }}"><span><strong>{{ item.class_name }}</strong></span><span class="count-chip count-present">{{ item.total }}টি ক্লাস</span></div>{% endfor %}</div>{% else %}<p class="muted report-empty">এই মাসে কোনো ক্লাসের তথ্য নেই।</p>{% endif %}
+      </section>
+      <section class="teacher-year-section"><h3>নেওয়া পরীক্ষা ও অধ্যায়</h3>
+        {% if monthly_exam_chapters %}<div class="chapter-report-list">{% for item in monthly_exam_chapters %}<div class="chapter-report-row year-filter-item" data-academic-year="{{ item.year_key }}"><span><strong>{{ item.class_name }} · {{ item.paper }}</strong><small>{{ item.chapter }}</small></span><span class="count-chip count-present">{{ item.total }}টি পরীক্ষা</span></div>{% endfor %}</div>{% else %}<p class="muted report-empty">এই মাসে কোনো পরীক্ষা যোগ করা হয়নি।</p>{% endif %}
+      </section>
+    </div>
+  </div>
+</section>
+
+<section class="panel teacher-calendar-panel" id="teacher-calendar">
+  <div class="panel-heading teacher-calendar-heading">
+    <div><span class="eyebrow">সুপার অ্যাডমিন অনুমোদিত উপস্থিতি · আপনার ক্লাস ও পরীক্ষা</span><h2>{{ calendar_month_label }} · ক্যালেন্ডার</h2><p class="muted">সম্পন্ন ক্লাস, চলমান ক্লাস, পরবর্তী ক্লাস এবং আপনার নেওয়া পরীক্ষার তারিখ।</p></div>
+    <div class="calendar-month-navigation">
+      <a class="button button-light button-small" href="?month={{ previous_calendar_month }}#teacher-calendar" aria-label="আগের মাস">←</a>
+      <a class="button button-light button-small" href="?month={{ calendar_month_value }}#teacher-calendar">এই মাস</a>
+      <a class="button button-light button-small" href="?month={{ next_calendar_month }}#teacher-calendar" aria-label="পরের মাস">→</a>
+    </div>
+  </div>
+  <div class="calendar-event-legend" aria-label="ক্যালেন্ডারের ইভেন্টের ধরন">
+    <span><i class="calendar-legend-dot legend-completed"></i>সম্পন্ন</span>
+    <span><i class="calendar-legend-dot legend-running"></i>চলমান</span>
+    <span><i class="calendar-legend-dot legend-upcoming"></i>পরবর্তী</span>
+    <span><i class="calendar-legend-dot legend-exam"></i>পরীক্ষা</span>
+  </div>
+  {% if calendar_has_events %}
+  <div class="teacher-calendar-grid" role="grid" aria-label="{{ calendar_month_label }}-এর ক্লাস ক্যালেন্ডার">
+    {% for weekday in calendar_weekdays %}<div class="teacher-calendar-weekday" role="columnheader">{{ weekday }}</div>{% endfor %}
+    {% for week in calendar_weeks %}{% for day in week %}
+      <div class="teacher-calendar-day {% if not day.in_month %}outside-month{% endif %} {% if day.is_today %}calendar-today{% endif %} {% if day.classes %}has-scheduled-classes{% endif %}" role="gridcell">
+        <div class="calendar-day-heading"><span class="calendar-date-number">{{ day.date|date:"j" }}</span>{% if day.classes %}<span class="calendar-class-count" aria-label="{{ day.classes|length }}টি ইভেন্ট"><span>{{ day.classes|length }}</span><span class="calendar-class-count-label"> ইভেন্ট</span></span>{% endif %}</div>
+        {% for item in day.classes %}
+          {% if item.event_type == 'exam' %}
+            <div class="calendar-class calendar-exam year-filter-item" data-academic-year="{{ item.year_key }}">
+              <span class="calendar-event-tag">পরীক্ষা</span>
+              <strong>{{ item.title }}</strong>
+              <span>{{ item.class_name }}{% if item.subject %} · {{ item.subject }}{% endif %}</span>
+            </div>
+          {% else %}
+            <div class="calendar-class calendar-class-{{ item.status }} year-filter-item" data-academic-year="{{ item.year_key }}">
+              <span class="calendar-event-tag">
+                {% if item.status == 'running' %}চলমান
+                {% elif item.status == 'completed' %}সম্পন্ন
+                {% else %}পরবর্তী{% endif %}
+              </span>
+              <strong>{{ item.subject }}</strong>
+              <span>{{ item.class_name }}</span>
+              {% if item.start_time and item.end_time %}<small>{{ item.start_time|time:"g:i A" }}–{{ item.end_time|time:"g:i A" }}</small>{% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endfor %}{% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state compact-empty"><span>◷</span><strong>কোনো ইভেন্ট নেই</strong><p>এই মাসে সম্পন্ন বা নির্ধারিত ক্লাস কিংবা পরীক্ষা নেই।</p></div>
+  {% endif %}
+</section>
+
+<script>
+  document.querySelectorAll('[data-year-filter-group]').forEach((group) => {
+    const tabs = group.querySelectorAll('[data-year-filter]');
+    const items = group.querySelectorAll('.year-filter-item');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const selectedYear = tab.dataset.yearFilter;
+        tabs.forEach((item) => {
+          const selected = item === tab;
+          item.classList.toggle('active', selected);
+          item.setAttribute('aria-selected', String(selected));
+        });
+        items.forEach((item) => {
+          item.hidden = selectedYear !== 'all' && item.dataset.academicYear !== selectedYear;
+        });
+      });
+    });
+  });
+</script>
+
+<section class="panel teacher-today-attendance" id="today-classes">
+  <div class="panel-heading"><div><span class="eyebrow">আজকের নির্ধারিত ক্লাস</span><h2>নিজের উপস্থিতি</h2><p class="muted">আজ ক্লাস থাকলে উপস্থিতির আবেদন পাঠান; সুপার অ্যাডমিন অনুমোদনের পর তা গণনায় যুক্ত হবে।</p></div></div>
+  {% if attendance_notice == 'pending' %}<div class="alert alert-success">আপনার উপস্থিতির আবেদন পাঠানো হয়েছে। সুপার অ্যাডমিন অনুমোদন করলে এটি গণনায় যুক্ত হবে।</div>{% elif attendance_notice == 'already-recorded' %}<div class="alert alert-info">আজকের উপস্থিতি ইতিমধ্যে নথিভুক্ত বা অনুমোদনের অপেক্ষায় আছে।</div>{% endif %}
+  {% if today_classes %}
+  <div class="teacher-today-class-list">
+    {% for item in today_classes %}
+    <article class="teacher-today-class">
+      <div><strong>{{ item.routine.get_year_group_display }} · {{ item.routine.subject }}</strong><small>{{ item.routine.start_time|time:"g:i A" }}–{{ item.routine.end_time|time:"g:i A" }}{% if item.routine.chapter %} · {{ item.routine.chapter }}{% endif %}</small></div>
+      {% if item.attendance.status == 'pending' %}<span class="attendance-state attendance-pending">অনুমোদনের অপেক্ষায়</span>
+      {% elif item.attendance.status == 'approved' %}<span class="attendance-state attendance-approved">উপস্থিতি অনুমোদিত</span>
+      {% elif item.attendance.status == 'absent' %}<span class="attendance-state attendance-absent">অনুপস্থিত নথিভুক্ত</span>
+      {% elif item.attendance.status == 'rejected' %}<span class="attendance-state attendance-rejected">আবেদন অনুমোদিত হয়নি</span>
+      {% else %}<form method="post" action="{% url 'request_teacher_attendance' item.routine.pk %}">{% csrf_token %}<button class="button button-primary button-small" type="submit">আমি উপস্থিত</button></form>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}<div class="empty-state compact-empty"><span>◷</span><strong>আজ আপনার কোনো ক্লাস নির্ধারিত নেই</strong><p>আপনার নামে রুটিনে ক্লাস থাকলে এখানে উপস্থিতির আবেদন করতে পারবেন।</p></div>{% endif %}
+</section>
+
+<section class="support-session-banner teacher-support-session">
+  <div class="support-session-copy">
+    <span class="support-session-icon" aria-hidden="true">✦</span>
+    <div><span class="eyebrow">শিক্ষার্থীদের জন্য সহায়তা</span><h2>সাপোর্ট সেশন</h2><p>শিক্ষার্থীদের পড়ার সমস্যায় Google Meet-এ সহায়তা দিন। যোগ দেওয়ার দিনটি আপনার dashboard-এ নথিভুক্ত হবে।</p></div>
+  </div>
+  <div class="support-session-actions">
+    <div class="support-session-stat"><strong>{{ support_session_days }}</strong><span>মোট যোগদানের দিন</span></div>
+    <div class="support-session-join-control">{% if support_session_joined_today %}<span class="support-session-joined">✓ আজ যোগ দিয়েছেন</span>{% endif %}<form method="post" action="{% url 'join_support_session' %}" target="_blank" rel="noopener">{% csrf_token %}<button class="button button-primary support-session-button" type="submit">{% if support_session_joined_today %}আবার যোগ দিন{% else %}সাপোর্ট সেশনে যোগ দিন{% endif %} <span aria-hidden="true">↗</span></button></form></div>
+  </div>
+</section>
+
+{% include "portal/partials/class_session_progress.html" %}
+
+<section class="content-grid dashboard-grid">
+  <article class="panel attendance-chart-panel">
+    <div class="panel-heading">
+      <div><span class="eyebrow">শিক্ষক উপস্থিতি বিশ্লেষণ</span><h2>এই মাসে আমার উপস্থিতির হার</h2><p class="muted">{{ month_label }} · শুধু আপনার যাচাইকৃত উপস্থিতি ও অনুপস্থিতি</p></div>
+      <a class="button button-light button-small" href="#today-classes">নিজের উপস্থিতি <span>→</span></a>
+    </div>
+    <div class="chart-legend"><span><i class="legend-dot legend-present"></i>আমি উপস্থিত ছিলাম</span><span><i class="legend-dot legend-absent"></i>অনুপস্থিত নথিভুক্ত</span></div>
+    <div class="chart-scroll">
+      <div class="bar-chart" role="img" aria-label="এই মাসে শিক্ষকের প্রতিদিনের যাচাইকৃত উপস্থিতি">
+        {% for point in chart %}
+        <div class="chart-column" title="{{ point.day }} তারিখ: {% if point.present %}আপনি উপস্থিত ছিলেন{% elif point.absent %}অনুপস্থিত নথিভুক্ত{% else %}যাচাইকৃত তথ্য নেই{% endif %}">
+          <div class="chart-bars {% if not point.has_data %}chart-empty{% endif %}">
+            <span class="chart-bar bar-present" style="height: {{ point.present_height }}%"></span>
+            <span class="chart-bar bar-absent" style="height: {{ point.absent_height }}%"></span>
+          </div>
+          <span class="chart-day">{{ point.day }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="chart-axis-note"><span>{{ reviewed_teacher_days }}টি যাচাইকৃত দিনের তথ্য</span><span>০% <i class="axis-line"></i> ১০০%</span></div>
+  </article>
+  <article class="panel quick-actions-panel">
+    <div class="panel-heading"><div><span class="eyebrow">দ্রুত কাজ</span><h2>আজ কী করবেন?</h2></div></div>
+    <a class="quick-action" href="#today-classes"><span class="quick-icon quick-green">✓</span><span><strong>নিজের উপস্থিতি</strong><small>আজকের ক্লাসে আবেদন করুন</small></span><b>→</b></a>
+    <a class="quick-action" href="{% url 'exam_list' %}"><span class="quick-icon quick-purple">＋</span><span><strong>নতুন পরীক্ষা</strong><small>পরীক্ষা তৈরি ও নম্বর দিন</small></span><b>→</b></a>
+    <a class="quick-action" href="{% url 'student_list' %}"><span class="quick-icon quick-blue">♙</span><span><strong>শিক্ষার্থী তালিকা</strong><small>শিক্ষার্থীর তথ্য দেখুন</small></span><b>→</b></a>
+    <div class="action-tip"><span>✦</span> প্রতিদিন নিয়মিত উপস্থিতি নিলে মাসিক রিপোর্ট আরও নির্ভুল হবে।</div>
+  </article>
+</section>
+
+<section class="panel recent-panel">
+  <div class="panel-heading"><div><span class="eyebrow">পরীক্ষা ব্যবস্থাপনা</span><h2>সাম্প্রতিক পরীক্ষা</h2></div><a class="text-link" href="{% url 'exam_list' %}">সব পরীক্ষা দেখুন →</a></div>
+  {% if recent_exams %}
+  <div class="table-wrap"><table class="data-table"><thead><tr><th>পরীক্ষা</th><th>শ্রেণি/ব্যাচ</th><th>অধ্যায় ও টপিক</th><th>তারিখ</th><th>পূর্ণমান</th><th></th></tr></thead><tbody>
+  {% for exam in recent_exams %}<tr><td><strong>{{ exam.title }}</strong><small>{{ exam.subject }} · {{ exam.paper }}</small></td><td>{{ exam.get_year_group_display }}</td><td>{{ exam.chapter }}<small>{{ exam.topic }}</small></td><td>{{ exam.exam_date|date:"j M, Y" }}</td><td>{{ exam.total_marks }}</td><td><a class="table-link" href="{% url 'exam_results' exam.pk %}">নম্বর দিন →</a></td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty-state"><span>▤</span><strong>এখনো কোনো পরীক্ষা যোগ করা হয়নি</strong><p>প্রথম পরীক্ষাটি তৈরি করে শিক্ষার্থীদের নম্বর যোগ করুন।</p><a class="button button-primary button-small" href="{% url 'exam_list' %}">পরীক্ষা তৈরি করুন</a></div>{% endif %}
+</section>
+{% endblock %}

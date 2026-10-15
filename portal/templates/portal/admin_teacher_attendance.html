@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load coaching_tags %}
+{% block title %}শিক্ষকের উপস্থিতি{% endblock %}
+{% block page_title %}শিক্ষকের উপস্থিতি{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">শিক্ষক উপস্থিতি যাচাই</span><h1>শিক্ষকদের উপস্থিতি</h1><p>শিক্ষকের স্ব-উপস্থিতির আবেদন অনুমোদন করুন, অথবা সরাসরি উপস্থিতি নথিভুক্ত করুন।</p></div></section>
+<section class="stats-grid admin-stats-grid">
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-orange">◷</span><span class="stat-caption">অনুমোদনের অপেক্ষায়</span></div><strong class="stat-number">{{ pending_count }}</strong><span class="stat-foot">সব তারিখের আবেদন</span></article>
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-green">✓</span><span class="stat-caption">নির্বাচিত দিনের উপস্থিতি</span></div><strong class="stat-number">{{ approved_count }}</strong><span class="stat-foot">{{ selected_date|date:"j F, Y" }}</span></article>
+</section>
+<section class="panel admin-attendance-panel">
+  <div class="panel-heading"><div><span class="eyebrow">তারিখভিত্তিক যাচাই</span><h2>সরাসরি উপস্থিতি নথিভুক্ত করুন</h2><p class="muted">শিক্ষক উপস্থিত থাকলে “উপস্থিত” এবং না থাকলে “অনুপস্থিত” নির্বাচন করুন।</p></div></div>
+  <form method="get" class="date-picker-form admin-teacher-attendance-date"><label for="teacher-attendance-date">তারিখ</label><input id="teacher-attendance-date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}"><button class="button button-light button-small" type="submit">দেখুন</button></form>
+  {% if teachers %}
+  <div class="table-wrap"><table class="data-table"><thead><tr><th>শিক্ষক</th><th>নির্ধারিত ক্লাস</th><th>অবস্থা</th><th>সরাসরি নথিভুক্তি</th></tr></thead><tbody>
+    {% for teacher in teachers %}
+    {% with record=attendance_by_teacher|get_item:teacher.pk %}
+    <tr><td><strong>{{ teacher.get_full_name|default:teacher.username }}</strong><small>{{ teacher.profile.phone|default:teacher.email|default:"যোগাযোগের তথ্য নেই" }}</small></td>
+      <td>{% if record.routine %}{{ record.routine.get_year_group_display }} · {{ record.routine.subject }}<small>{{ record.routine.start_time|time:"g:i A" }}–{{ record.routine.end_time|time:"g:i A" }}</small>{% else %}—{% endif %}</td>
+      <td>{% if record.status == 'pending' %}<span class="attendance-state attendance-pending">অনুমোদনের অপেক্ষায়</span>{% elif record.status == 'approved' %}<span class="attendance-state attendance-approved">উপস্থিত</span>{% elif record.status == 'absent' %}<span class="attendance-state attendance-absent">অনুপস্থিত</span>{% elif record.status == 'rejected' %}<span class="attendance-state attendance-rejected">আবেদন অনুমোদিত হয়নি</span>{% else %}<span class="muted">নথিভুক্ত হয়নি</span>{% endif %}</td>
+      <td><form method="post" class="teacher-attendance-mark-form">{% csrf_token %}<input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}"><input type="hidden" name="action" value="mark"><input type="hidden" name="teacher_id" value="{{ teacher.pk }}"><button class="button button-primary button-small" name="status" value="present" type="submit">উপস্থিত</button><button class="button button-light button-small" name="status" value="absent" type="submit">অনুপস্থিত</button></form></td>
+    </tr>
+    {% endwith %}
+    {% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty-state"><span>♙</span><strong>কোনো শিক্ষক অ্যাকাউন্ট নেই</strong><p>শিক্ষক যোগ করলে তাদের উপস্থিতি এখানে নথিভুক্ত করতে পারবেন।</p></div>{% endif %}
+</section>
+<section class="panel admin-attendance-panel">
+  <div class="panel-heading"><div><span class="eyebrow">শিক্ষকদের আবেদন</span><h2>অনুমোদনের অপেক্ষায়</h2><p class="muted">অনুমোদনের পরেই শিক্ষকের উপস্থিতি মাসিক হিসাবে গণনা হবে।</p></div></div>
+  {% if pending_requests %}
+  <div class="teacher-request-list">{% for record in pending_requests %}
+    <article class="teacher-request-row"><div><strong>{{ record.teacher.get_full_name|default:record.teacher.username }}</strong><small>{{ record.date|date:"j F, Y" }} · {% if record.routine %}{{ record.routine.get_year_group_display }} · {{ record.routine.subject }} · {{ record.routine.start_time|time:"g:i A" }}–{{ record.routine.end_time|time:"g:i A" }}{% else %}রুটিন পাওয়া যায়নি{% endif %}</small></div>
+      <div class="teacher-request-actions"><form method="post">{% csrf_token %}<input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}"><input type="hidden" name="record_id" value="{{ record.pk }}"><button class="button button-primary button-small" name="action" value="approve" type="submit">অনুমোদন</button><button class="button button-light button-small" name="action" value="reject" type="submit">প্রত্যাখ্যান</button></form></div>
+    </article>
+  {% endfor %}</div>
+  {% else %}<div class="empty-state compact-empty"><span>✓</span><strong>কোনো আবেদন অপেক্ষমাণ নেই</strong><p>শিক্ষকেরা আজকের নির্ধারিত ক্লাস থেকে উপস্থিতির আবেদন করতে পারবেন।</p></div>{% endif %}
+</section>
+{% endblock %}

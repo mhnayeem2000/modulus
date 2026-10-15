@@ -1,0 +1,67 @@
+<section class="panel study-progress-panel">
+  <div class="panel-heading">
+    <div><span class="eyebrow">দিনভিত্তিক পড়ার অগ্রগতি</span><h2>শিক্ষার্থীরা পড়া শেষ করেছে কি না</h2><p class="muted">তারিখ বেছে বর্ষভিত্তিক অগ্রগতি ও শিক্ষার্থীদের জানানো সমস্যাগুলো দেখুন।</p></div>
+  </div>
+  <form method="get" class="study-progress-filter">
+    <label for="study-report-date">ক্লাসের তারিখ</label>
+    <input id="study-report-date" type="date" name="study_date" value="{{ study_report_date|date:'Y-m-d' }}" required>
+    {% if calendar_month_value %}<input type="hidden" name="month" value="{{ calendar_month_value }}">{% endif %}
+    <button class="button button-primary button-small" type="submit">রিপোর্ট দেখুন</button>
+  </form>
+  {% if today_study_sessions %}
+  <div class="study-year-grid">
+    {% for year_group in today_study_year_groups %}
+    <section class="study-year-column study-year-{{ year_group.key }}">
+      <header class="study-year-heading">
+        <div><span class="study-year-kicker">বর্ষভিত্তিক রিপোর্ট</span><h3>{{ year_group.label }}</h3></div>
+        <span class="study-year-count">{{ year_group.sessions|length }}টি ক্লাস</span>
+      </header>
+      {% if year_group.sessions %}
+      <div class="study-progress-list">
+        {% for session in year_group.sessions %}
+        <article class="study-progress-card">
+          <div class="study-progress-heading">
+            <div><strong>{{ session.subject }}{% if session.paper %} · {{ session.paper }}{% endif %}</strong><small>{{ session.chapter }}{% if session.topic %} · {{ session.topic }}{% endif %}{% if user_role == 'superadmin' %} · শিক্ষক: {{ session.teacher.get_full_name|default:session.teacher.username }}{% endif %}</small></div>
+          </div>
+          <div class="study-progress-stats">
+            <span class="study-progress-done"><strong>{{ session.completed_student_count }}</strong> জন সম্পন্ন</span>
+            <span class="study-progress-pending"><strong>{{ session.not_completed_student_count }}</strong> জন এখনো সম্পন্ন হিসেবে চিহ্নিত নয়</span>
+            <span class="study-progress-total">মোট {{ session.eligible_student_count }} জন</span>
+          </div>
+          {% if session.progress_reports %}
+          <div class="study-difficulties">
+            <h3>শিক্ষার্থীদের জমা দেওয়া অগ্রগতি · {{ session.submitted_student_count }}টি</h3>
+            {% for progress in session.progress_reports %}
+            <blockquote class="study-progress-report{% if progress.is_completed %} is-complete{% endif %}">
+              <strong>{{ progress.student.name }}</strong><span>{% if progress.is_completed %}পড়া সম্পন্ন{% else %}এখনো পড়া সম্পন্ন করেনি{% endif %}</span>
+              {% if progress.problem_description %}<p>{{ progress.problem_description|linebreaksbr }}</p>{% else %}<p class="study-no-problem">কোনো সমস্যার কথা জানায়নি।</p>{% endif %}
+            </blockquote>
+            {% endfor %}
+          </div>
+          {% elif session.submitted_student_count %}
+          <p class="study-no-difficulties">এই ক্লাসের জমা দেওয়া অগ্রগতি অন্য রিপোর্ট পৃষ্ঠায় আছে।</p>
+          {% else %}
+          <p class="study-no-difficulties">এখনো কোনো শিক্ষার্থী অগ্রগতি জমা দেয়নি।</p>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="study-year-empty"><span>✓</span><div><strong>এই তারিখে এই বর্ষে কোনো ক্লাস নেই</strong><p>ক্লাস যোগ হলে শিক্ষার্থীদের অগ্রগতি এখানে দেখা যাবে।</p></div></div>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state compact-empty"><span>✓</span><strong>{{ study_report_date|date:"j F Y" }} তারিখে কোনো পরিচালিত ক্লাস নেই</strong><p>অন্য তারিখ বেছে নিলে সেই দিনের ক্লাসের পড়ার অগ্রগতি এখানে দেখা যাবে।</p></div>
+  {% endif %}
+  {% if study_report_page.paginator.num_pages > 1 %}
+  <nav class="study-progress-pagination" aria-label="পড়ার অগ্রগতির পৃষ্ঠা">
+    <span>পৃষ্ঠা {{ study_report_page.number }} / {{ study_report_page.paginator.num_pages }} · মোট {{ study_report_page.paginator.count }}টি শিক্ষার্থীর জমা</span>
+    <div>
+      {% if study_report_page.has_previous %}<a class="button button-light button-small" href="?study_date={{ study_report_date|date:'Y-m-d' }}{% if calendar_month_value %}&amp;month={{ calendar_month_value }}{% endif %}&amp;study_page={{ study_report_page.previous_page_number }}">← আগের</a>{% endif %}
+      {% if study_report_page.has_next %}<a class="button button-light button-small" href="?study_date={{ study_report_date|date:'Y-m-d' }}{% if calendar_month_value %}&amp;month={{ calendar_month_value }}{% endif %}&amp;study_page={{ study_report_page.next_page_number }}">পরের →</a>{% endif %}
+    </div>
+  </nav>
+  {% endif %}
+</section>

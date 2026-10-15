@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}সার্বিক ড্যাশবোর্ড{% endblock %}
+{% block page_title %}সার্বিক ড্যাশবোর্ড{% endblock %}
+{% block content %}
+<section class="welcome-banner admin-welcome"><div><span class="eyebrow">সুপার অ্যাডমিন · পুরো কোচিংয়ের হিসাব</span><h1>সবকিছু এক নজরে দেখুন 👋</h1><p>শিক্ষক, শিক্ষার্থী, ক্লাস ও পরীক্ষার সামগ্রিক চিত্র এখানে।</p></div><a class="button button-primary" href="{% url 'admin_teachers' %}">শিক্ষক ব্যবস্থাপনা <span>→</span></a></section>
+<section class="stats-grid admin-stats-grid">
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-blue">♙</span><span class="stat-caption">শিক্ষক</span></div><strong class="stat-number">{{ teacher_count }}</strong><a class="stat-action-link" href="{% url 'admin_teachers' %}">শিক্ষকের তথ্য দেখুন →</a></article>
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-green">♧</span><span class="stat-caption">সক্রিয় শিক্ষার্থী</span></div><strong class="stat-number">{{ student_count }}</strong><a class="stat-action-link" href="{% url 'student_list' %}">শিক্ষার্থী তালিকা →</a></article>
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-purple">◷</span><span class="stat-caption">পরিচালিত ক্লাস</span></div><strong class="stat-number">{{ class_count }}</strong><a class="stat-action-link" href="{% url 'class_management' %}">ক্লাসের তথ্য দেখুন →</a></article>
+  <article class="stat-card"><div class="stat-top"><span class="stat-icon icon-orange">▤</span><span class="stat-caption">মোট পরীক্ষা</span></div><strong class="stat-number">{{ exam_count }}</strong><a class="stat-action-link" href="{% url 'exam_list' %}">পরীক্ষার তালিকা →</a></article>
+</section>
+{% include "portal/partials/class_session_progress.html" %}
+<section class="panel fee-overview-panel">
+  <div class="panel-heading">
+    <div>
+      <span class="eyebrow">বেতন ও বাকি</span>
+      <h2>শিক্ষার্থী অ্যাকাউন্ট · সার্বিক হিসাব</h2>
+      <p class="muted">সব মাসের মোট বেতন, আদায় ও বকেয়ার সারাংশ। মাসভিত্তিক বিস্তারিত অ্যাকাউন্ট পাতায় দেখুন।</p>
+    </div>
+    <a class="button button-primary button-small" href="{% url 'admin_student_accounts' %}">বিস্তারিত অ্যাকাউন্ট <span>→</span></a>
+  </div>
+  <div class="fee-overview-grid">
+    <article class="fee-overview-card fee-overview-green"><span>বেতন দিয়েছে</span><strong>{{ fee_paid_students }}</strong><small>শিক্ষার্থী</small></article>
+    <article class="fee-overview-card fee-overview-orange"><span>বেতন দেয়নি / বাকি আছে</span><strong>{{ fee_unpaid_students }}</strong><small>শিক্ষার্থী</small></article>
+    <article class="fee-overview-card fee-overview-blue"><span>মোট আদায়</span><strong>{{ fee_total_collected }}</strong><small>টাকা · সব মাস মিলিয়ে</small></article>
+    <article class="fee-overview-card fee-overview-red"><span>এখনো বকেয়া</span><strong>{{ fee_total_due }}</strong><small>টাকা · সব মাস মিলিয়ে</small></article>
+    <article class="fee-overview-card fee-overview-purple"><span>মোট নির্ধারিত বেতন</span><strong>{{ fee_total_earned }}</strong><small>টাকা · সব মাস মিলিয়ে</small></article>
+  </div>
+</section>
+<section class="panel admin-attendance-link"><div class="panel-heading"><div><span class="eyebrow">শিক্ষক উপস্থিতি</span><h2>শিক্ষকরা ক্লাসে উপস্থিত হয়েছেন কি না</h2><p class="muted">{{ pending_teacher_attendance }}টি স্ব-উপস্থিতির আবেদন অনুমোদনের অপেক্ষায়</p></div><a class="button button-primary button-small" href="{% url 'admin_teacher_attendance' %}">উপস্থিতি যাচাই করুন <span>→</span></a></div></section>
+<section class="panel admin-attendance-link"><div class="panel-heading"><div><span class="eyebrow">শিক্ষার্থীদের কথা</span><h2>মতামত ও সহায়তার অনুরোধ</h2><p class="muted">{{ student_feedback_count }}টি মতামত শিক্ষার্থীদের কাছ থেকে এসেছে</p></div><a class="button button-primary button-small" href="{% url 'admin_student_feedback' %}">মতামত দেখুন <span>→</span></a></div></section>
+<section class="panel admin-teacher-preview"><div class="panel-heading"><div><span class="eyebrow">শিক্ষক ব্যবস্থাপনা</span><h2>শিক্ষকবৃন্দ</h2><p class="muted">শিক্ষকভিত্তিক মাসিক ক্লাস, পড়ানো অধ্যায় ও পরীক্ষার বিস্তারিত দেখতে নির্বাচন করুন।</p></div><a class="button button-light button-small" href="{% url 'admin_teachers' %}">সব শিক্ষক <span>→</span></a></div>
+  {% if recent_teachers %}<div class="teacher-preview-grid">{% for teacher in recent_teachers %}<a class="teacher-preview-card" href="{% url 'admin_teachers' %}"><span class="teacher-avatar">{{ teacher.first_name|default:teacher.username|slice:":1" }}</span><span><strong>{{ teacher.get_full_name|default:teacher.username }}</strong><small>{{ teacher.email|default:teacher.username }}</small></span><b>→</b></a>{% endfor %}</div>{% else %}<div class="empty-state"><span>♙</span><strong>এখনো শিক্ষক অ্যাকাউন্ট তৈরি হয়নি</strong><p>শিক্ষকদের লগইন দিতে শিক্ষক ব্যবস্থাপনা থেকে অ্যাকাউন্ট তৈরি করুন।</p><a class="button button-primary button-small" href="{% url 'admin_teachers' %}">শিক্ষক যোগ করুন</a></div>{% endif %}
+</section>
+{% endblock %}

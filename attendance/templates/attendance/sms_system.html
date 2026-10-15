@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}SMS System{% endblock %}
+{% block page_title %}SMS System{% endblock %}
+{% block content %}
+<section class="page-intro sms-system-intro">
+  <div>
+    <span class="eyebrow">Messaging control center</span>
+    <h1>SMS System</h1>
+    <p>Attendance save করার সময় guardian-দের SMS পাঠানো হবে কি না, এখান থেকে নিয়ন্ত্রণ করুন।</p>
+  </div>
+  <a class="button button-light" href="{% url 'sms_report' %}">পূর্ণ SMS রিপোর্ট <span aria-hidden="true">→</span></a>
+</section>
+
+<section class="sms-system-hero{% if sms_settings.enabled %} sms-system-on{% else %} sms-system-off{% endif %}" data-sms-state>
+  <div class="sms-system-hero-copy">
+    <span class="sms-system-orb" data-sms-state-icon aria-hidden="true">{% if sms_settings.enabled %}✓{% else %}Ⅱ{% endif %}</span>
+    <div>
+      <span class="sms-system-status-label">BulkSMSBD SMS service</span>
+      <h2 data-sms-state-title>{% if sms_settings.enabled %}SMS is ON{% else %}SMS is OFF{% endif %}</h2>
+      <p data-sms-state-description>
+        {% if sms_settings.enabled %}
+          Attendance-এ SMS মাধ্যম বেছে save করলে এবং marks প্রথমবার/পরিবর্তন করে save করলে SMS পাঠানোর চেষ্টা হবে।
+        {% else %}
+          Attendance save হবে, কিন্তু SMS service বন্ধ থাকবে—কোনো SMS পাঠানো হবে না।
+        {% endif %}
+      </p>
+      <div class="alert alert-success" data-sms-ajax-feedback role="status" hidden></div>
+    </div>
+  </div>
+  <form method="post" action="{% url 'sms_state_api' %}" data-sms-fallback-url="{% url 'sms_system' %}" class="sms-system-toggle-form" data-sms-ajax-form data-sms-toggle>
+    {% csrf_token %}
+    <input type="hidden" name="action" value="set_sms_state">
+    <input type="hidden" name="enabled" value="{% if sms_settings.enabled %}off{% else %}on{% endif %}">
+    <button class="sms-system-toggle {% if sms_settings.enabled %}is-on{% else %}is-off{% endif %}" type="submit" aria-label="{% if sms_settings.enabled %}SMS System বন্ধ করুন{% else %}SMS System চালু করুন{% endif %}" data-sms-toggle-button>
+      <span class="sms-system-toggle-track"><span></span></span>
+      <span>{% if sms_settings.enabled %}বন্ধ করুন{% else %}চালু করুন{% endif %}</span>
+    </button>
+  </form>
+</section>
+
+<section class="sms-system-stats" aria-label="SMS service statistics">
+  <article class="sms-system-stat-card">
+    <span class="sms-system-stat-icon sms-icon-blue" aria-hidden="true">↗</span>
+    <span class="sms-system-stat-label">BulkSMSBD গ্রহণ করেছে</span>
+    <strong>{{ notification_totals.sent|default:0 }}</strong>
+    <small>attendance SMS</small>
+  </article>
+  <article class="sms-system-stat-card">
+    <span class="sms-system-stat-icon sms-icon-green" aria-hidden="true">▣</span>
+    <span class="sms-system-stat-label">Save history</span>
+    <strong>{{ batch_totals.batches|default:0 }}</strong>
+    <small>SMS-enabled/disabled saves</small>
+  </article>
+  <article class="sms-system-stat-card">
+    <span class="sms-system-stat-icon sms-icon-orange" aria-hidden="true">!</span>
+    <span class="sms-system-stat-label">Failed</span>
+    <strong>{{ notification_totals.failed|default:0 }}</strong>
+    <small>provider attempt failed</small>
+  </article>
+  <article class="sms-system-stat-card">
+    <span class="sms-system-stat-icon sms-icon-purple" aria-hidden="true">৳</span>
+    <span class="sms-system-stat-label">Attendance SMS-এর খরচ</span>
+    <strong>{% if batch_totals.estimated_cost != None %}৳{{ batch_totals.estimated_cost|floatformat:2 }}{% else %}—{% endif %}</strong>
+    <small>attendance save-এর balance difference</small>
+  </article>
+</section>
+
+<section class="sms-system-bottom-grid">
+  <article class="sms-system-info-card">
+    <div class="sms-system-card-heading">
+      <span class="sms-system-stat-icon sms-icon-blue" aria-hidden="true">৳</span>
+      <div><h2>Account balance</h2><p>BulkSMSBD-এর live balance server থেকে দেখুন।</p></div>
+    </div>
+    <form method="post" action="{% url 'sms_balance_api' %}" data-sms-fallback-url="{% url 'sms_system' %}" data-sms-ajax-form>
+      {% csrf_token %}
+      <input type="hidden" name="action" value="check_sms_balance">
+      <button class="button button-light" type="submit">ব্যালেন্স চেক করুন <span aria-hidden="true">→</span></button>
+    </form>
+    <div class="sms-system-balance-result" data-sms-balance-result role="status" {% if balance == None %}hidden{% endif %}><span>বর্তমান ব্যালেন্স</span><strong>{% if balance != None %}৳{{ balance|floatformat:2 }}{% endif %}</strong></div>
+    <div class="alert alert-error" data-sms-ajax-error role="alert" hidden></div>
+  </article>
+  <article class="sms-system-info-card sms-system-how-card">
+    <div class="sms-system-card-heading">
+      <span class="sms-system-stat-icon sms-icon-green" aria-hidden="true">i</span>
+      <div><h2>কীভাবে কাজ করবে</h2><p>আপনার attendance workflow আগের মতোই থাকবে।</p></div>
+    </div>
+    <ul>
+      <li><span>01</span><div><strong>SMS ON</strong><small>Attendance page-এ SMS নির্বাচিত থাকলে save-এর পর SMS যাবে।</small></div></li>
+      <li><span>02</span><div><strong>SMS OFF</strong><small>Attendance save হবে, কিন্তু provider-এ SMS request যাবে না।</small></div></li>
+      <li><span>03</span><div><strong>SMS Report</strong><small>পাঠানো, ব্যর্থতা, নম্বরভিত্তিক count ও save history আলাদা page-এ থাকবে।</small></div></li>
+    </ul>
+  </article>
+</section>
+{% endblock %}

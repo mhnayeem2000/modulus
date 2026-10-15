@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}শিক্ষকের তথ্য পরিবর্তন{% endblock %}
+{% block page_title %}শিক্ষকের তথ্য পরিবর্তন{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <span class="eyebrow">সুপার অ্যাডমিন · শিক্ষকবৃন্দ</span>
+    <h1>শিক্ষকের তথ্য পরিবর্তন</h1>
+    <p>{{ teacher.get_full_name|default:teacher.username }}-এর অ্যাকাউন্টের তথ্য হালনাগাদ করুন।</p>
+  </div>
+</section>
+<article class="panel form-panel teacher-edit-panel">
+  <form method="post" class="stacked-form">
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="field-group">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<span class="field-help">{{ field.help_text }}</span>{% endif %}
+      {% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}
+    </div>
+    {% endfor %}
+    <div class="teacher-edit-actions">
+      <button class="button button-primary" type="submit">পরিবর্তন সংরক্ষণ</button>
+      <a class="button button-light" href="{% url 'admin_teachers' %}">ফিরে যান</a>
+    </div>
+  </form>
+</article>
+{% endblock %}

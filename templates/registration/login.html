@@ -1,0 +1,1192 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f7fc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <title>Sign In | Modulus Edu</title>
+    <link rel="icon" type="image/png" href="{% static 'images/modulus-logo.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/Nav-192.png' %}">
+    <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4169e1;
+            --primary-dark: #2f54c5;
+            --navy: #14264e;
+            --text: #17233c;
+            --muted: #75819a;
+            --border: #e3e9f3;
+            --surface: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: "DM Sans", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 10% 10%, #e5edff 0, transparent 32%),
+                radial-gradient(circle at 90% 90%, #e8f4ff 0, transparent 30%),
+                #f5f7fc;
+            overflow-x: hidden;
+        }
+
+        button, input {
+            font: inherit;
+        }
+
+        .page-shell {
+            width: 100%;
+            max-width: 1120px;
+            animation: pageEnter .7s ease both;
+        }
+
+        .login-card {
+            display: grid;
+            grid-template-columns: 1fr 0.92fr;
+            min-height: 650px;
+            overflow: hidden;
+            background: var(--surface);
+            border: 1px solid rgba(226, 232, 243, .9);
+            border-radius: 27px;
+            box-shadow:
+                0 30px 90px rgba(28, 47, 91, .10),
+                0 4px 14px rgba(28, 47, 91, .04);
+        }
+
+        /* LEFT PANEL */
+
+        .visual-panel {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 42px;
+            min-width: 0;
+            color: #fff;
+            overflow: hidden;
+            isolation: isolate;
+            background:
+                radial-gradient(ellipse at 8% 100%, rgba(72, 117, 230, .40), transparent 45%),
+                linear-gradient(145deg, #14264e 0%, #1b356c 56%, #244a91 100%);
+        }
+
+        .visual-panel::before {
+            content: "";
+            position: absolute;
+            width: 340px;
+            height: 340px;
+            top: -155px;
+            right: -125px;
+            border: 1px solid rgba(255, 255, 255, .13);
+            border-radius: 50%;
+            box-shadow:
+                0 0 0 35px rgba(255, 255, 255, .025),
+                0 0 0 75px rgba(255, 255, 255, .025);
+            z-index: -1;
+        }
+
+        .visual-panel::after {
+            content: "";
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            left: -150px;
+            bottom: 60px;
+            border: 1px solid rgba(255, 255, 255, .10);
+            border-radius: 50%;
+            box-shadow: 0 0 0 30px rgba(255, 255, 255, .025);
+            z-index: -1;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .brand-logo {
+            display: block;
+            width: 190px;
+            height: auto;
+            padding: 4px;
+            border-radius: 10px;
+            background: #fff;
+        }
+
+        .brand-caption {
+            margin-top: 2px;
+            color: #b8c9ec;
+            font-size: 11px;
+            letter-spacing: .5px;
+        }
+
+        .visual-content {
+            position: relative;
+            z-index: 2;
+            margin-top: 35px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, .16);
+            border-radius: 30px;
+            background: rgba(255, 255, 255, .075);
+            color: #dce7ff;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+        }
+
+        .eyebrow-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #69e5c2;
+            box-shadow: 0 0 12px rgba(105, 229, 194, .8);
+        }
+
+        .visual-content h1 {
+            max-width: 440px;
+            margin-top: 23px;
+            font-family: "Manrope", sans-serif;
+            font-size: clamp(30px, 3.1vw, 43px);
+            line-height: 1.2;
+            letter-spacing: -1.8px;
+            font-weight: 800;
+        }
+
+        .visual-content h1 span {
+            color: #8fb1ff;
+        }
+
+        .visual-description {
+            max-width: 355px;
+            margin-top: 16px;
+            color: #c1cee9;
+            font-size: 14px;
+            line-height: 1.85;
+        }
+
+        /* SVG ILLUSTRATION */
+
+        .illustration {
+            width: 100%;
+            max-width: 440px;
+            margin: 20px auto 5px;
+            display: block;
+            overflow: visible;
+        }
+
+        .float-one {
+            animation: floatOne 5s ease-in-out infinite;
+            transform-origin: center;
+        }
+
+        .float-two {
+            animation: floatTwo 6s ease-in-out infinite;
+            transform-origin: center;
+        }
+
+        .float-three {
+            animation: floatOne 4.5s ease-in-out infinite reverse;
+            transform-origin: center;
+        }
+
+        .chart-line {
+            stroke-dasharray: 180;
+            stroke-dashoffset: 180;
+            animation: drawLine 2s ease .4s forwards;
+        }
+
+        .visual-footer {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, .13);
+            color: #c1cee9;
+            font-size: 12px;
+        }
+
+        .footer-icon {
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            width: 34px;
+            height: 34px;
+            border-radius: 11px;
+            background: rgba(255, 255, 255, .10);
+            color: #fff;
+        }
+
+        .footer-icon svg {
+            width: 17px;
+            height: 17px;
+        }
+
+        .visual-footer strong {
+            display: block;
+            margin-bottom: 3px;
+            color: #fff;
+            font-size: 12px;
+        }
+
+        /* RIGHT PANEL */
+
+        .form-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 52px 48px;
+            background: #fff;
+        }
+
+        .form-inner {
+            width: 100%;
+            max-width: 365px;
+        }
+
+        .mobile-brand {
+            display: none;
+        }
+
+        .form-top-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 22px;
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+        }
+
+        .form-top-label svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .form-heading {
+            font-family: "Manrope", sans-serif;
+            font-size: 34px;
+            line-height: 1.25;
+            font-weight: 800;
+            letter-spacing: -1.4px;
+            color: #17233c;
+        }
+
+        .form-subtitle {
+            margin-top: 11px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .login-form {
+            margin-top: 34px;
+        }
+
+        .error-box {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 22px;
+            padding: 13px 14px;
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            background: #fff5f5;
+            color: #b42318;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .error-box svg {
+            flex-shrink: 0;
+            width: 17px;
+            height: 17px;
+            margin-top: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 21px;
+        }
+
+        .label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 9px;
+        }
+
+        .field-label {
+            color: #283550;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            width: 18px;
+            height: 18px;
+            transform: translateY(-50%);
+            color: #8794ab;
+            pointer-events: none;
+            transition: color .2s ease;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 53px;
+            padding: 0 45px;
+            outline: none;
+            border: 1px solid #dfe5ef;
+            border-radius: 12px;
+            background: #fbfcfe;
+            color: #17233c;
+            font-size: 13px;
+            transition: border-color .22s ease, box-shadow .22s ease, background .22s ease;
+        }
+
+        .form-input::placeholder {
+            color: #a0aabc;
+            font-size: 12px;
+        }
+
+        .form-input:hover {
+            border-color: #bdc9df;
+        }
+
+        .form-input:focus {
+            border-color: #6082ed;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(65, 105, 225, .09);
+        }
+
+        .input-wrap:focus-within .input-icon {
+            color: var(--primary);
+        }
+
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            display: grid;
+            place-items: center;
+            padding: 4px;
+            border: none;
+            background: transparent;
+            color: #8995a9;
+            cursor: pointer;
+            transform: translateY(-50%);
+        }
+
+        .password-toggle:hover {
+            color: var(--primary);
+        }
+
+        .password-toggle svg {
+            display: block;
+            width: 18px;
+            height: 18px;
+        }
+
+        .form-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 3px;
+            margin-bottom: 25px;
+        }
+
+        .remember-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #6c7890;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .remember-label input {
+            width: 15px;
+            height: 15px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .sign-in-button {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            height: 53px;
+            overflow: hidden;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(110deg, #4169e1, #5278ed);
+            box-shadow: 0 8px 18px rgba(65, 105, 225, .22);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+        }
+
+        .sign-in-button::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255,255,255,.16), transparent);
+            transform: skewX(-20deg);
+            transition: left .6s ease;
+        }
+
+        .sign-in-button:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(110deg, #345bd0, #456ce1);
+            box-shadow: 0 12px 24px rgba(65, 105, 225, .28);
+        }
+
+        .sign-in-button:hover::before {
+            left: 140%;
+        }
+
+        .sign-in-button:active {
+            transform: translateY(0);
+        }
+
+        .sign-in-button svg {
+            width: 17px;
+            height: 17px;
+            transition: transform .2s ease;
+        }
+
+        .sign-in-button:hover svg {
+            transform: translateX(3px);
+        }
+
+        .secure-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            margin-top: 25px;
+            color: #8994a7;
+            font-size: 11px;
+        }
+
+        .secure-note svg {
+            width: 15px;
+            height: 15px;
+            color: #42a889;
+        }
+
+        .bottom-note {
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 1px solid #edf0f6;
+            text-align: center;
+            color: #a0aabc;
+            font-size: 10px;
+            line-height: 1.8;
+        }
+
+        /* ANIMATIONS */
+
+        @keyframes pageEnter {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes floatOne {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        @keyframes floatTwo {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(7px) rotate(2deg);
+            }
+        }
+
+        @keyframes drawLine {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        /* TABLET */
+
+        @media (max-width: 900px) {
+            body {
+                padding: 22px;
+            }
+
+            .login-card {
+                grid-template-columns: .9fr 1fr;
+                min-height: 610px;
+            }
+
+            .visual-panel {
+                padding: 32px;
+            }
+
+            .form-panel {
+                padding: 40px 32px;
+            }
+
+            .visual-content h1 {
+                font-size: 33px;
+            }
+
+            .illustration {
+                margin-top: 15px;
+            }
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 650px) {
+            body {
+                min-height: 100vh;
+                padding: 18px;
+                align-items: center;
+            }
+
+            .login-card {
+                display: flex;
+                flex-direction: column;
+                min-height: unset;
+                border-radius: 22px;
+            }
+
+            .visual-panel {
+                display: none;
+            }
+
+            .form-panel {
+                padding: 35px 26px 28px;
+            }
+
+            .form-inner {
+                max-width: 420px;
+            }
+
+            .mobile-brand {
+                display: flex;
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 11px;
+                margin-bottom: 36px;
+            }
+
+            .mobile-brand .brand-logo {
+                width: 165px;
+            }
+
+            .mobile-brand .brand-caption {
+                color: #7e8ba2;
+            }
+
+            .form-top-label {
+                margin-bottom: 17px;
+            }
+
+            .form-heading {
+                font-size: 31px;
+            }
+
+            .login-form {
+                margin-top: 28px;
+            }
+
+            .bottom-note {
+                margin-top: 28px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            body {
+                padding: 12px;
+            }
+
+            .form-panel {
+                padding: 28px 20px 22px;
+            }
+
+            .form-heading {
+                font-size: 28px;
+            }
+
+            .mobile-brand {
+                margin-bottom: 29px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: .01ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page-shell">
+    <main class="login-card">
+
+        <!-- LEFT: BRANDING AND ANIMATED VECTOR -->
+        <section class="visual-panel">
+
+            <div class="brand">
+                <img class="brand-logo" src="{% static 'images/modulus-logo.png' %}" alt="Modulus Edu logo">
+                <div>
+                    <div class="brand-caption">COACHING MANAGEMENT SYSTEM</div>
+                </div>
+            </div>
+
+            <div class="visual-content">
+
+                <div class="eyebrow">
+                    <span class="eyebrow-dot"></span>
+                    SMARTER CLASSROOM MANAGEMENT
+                </div>
+
+                <h1>
+                    Teach better.<br>
+                    Track progress.<br>
+                    <span>Achieve more.</span>
+                </h1>
+
+                <p class="visual-description">
+                    Everything you need to manage your classes, record attendance,
+                    evaluate exam results, and help students perform at their best.
+                </p>
+
+                <!-- Inline SVG illustration: no external image required -->
+                <svg class="illustration"
+                     viewBox="0 0 440 285"
+                     xmlns="http://www.w3.org/2000/svg"
+                     role="img"
+                     aria-label="Illustration of a teacher reviewing student performance">
+
+                    <defs>
+                        <linearGradient id="boardGradient" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#294779"/>
+                            <stop offset="100%" stop-color="#203963"/>
+                        </linearGradient>
+
+                        <linearGradient id="personGradient" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#83A5FF"/>
+                            <stop offset="100%" stop-color="#4D70D9"/>
+                        </linearGradient>
+
+                        <linearGradient id="cardGradient" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#FFFFFF"/>
+                            <stop offset="100%" stop-color="#EAF0FF"/>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Background decorative circles -->
+                    <circle cx="220" cy="140" r="112" fill="#ffffff" opacity=".035"/>
+                    <circle cx="220" cy="140" r="89" fill="none"
+                            stroke="#ffffff" stroke-opacity=".10"
+                            stroke-dasharray="4 8"/>
+
+                    <!-- Floating star -->
+                    <g class="float-one">
+                        <path d="M74 80L78 91L89 95L78 99L74 110L70 99L59 95L70 91Z"
+                              fill="#F5C76B"/>
+                        <circle cx="359" cy="81" r="4" fill="#73E4C4"/>
+                    </g>
+
+                    <!-- Dashboard panel behind student -->
+                    <g class="float-two">
+                        <rect x="221" y="28" width="152" height="113" rx="13"
+                              fill="url(#boardGradient)"
+                              stroke="#FFFFFF" stroke-opacity=".22"/>
+
+                        <circle cx="238" cy="44" r="3" fill="#F5C76B"/>
+                        <circle cx="248" cy="44" r="3" fill="#73E4C4"/>
+                        <circle cx="258" cy="44" r="3" fill="#8EABFF"/>
+
+                        <rect x="236" y="58" width="74" height="5" rx="2.5"
+                              fill="#FFFFFF" opacity=".85"/>
+                        <rect x="236" y="69" width="48" height="4" rx="2"
+                              fill="#A6BCE8" opacity=".65"/>
+
+                        <!-- Progress bars -->
+                        <rect x="236" y="83" width="121" height="7" rx="3.5"
+                              fill="#FFFFFF" opacity=".10"/>
+                        <rect x="236" y="83" width="92" height="7" rx="3.5"
+                              fill="#75DDBD"/>
+
+                        <rect x="236" y="97" width="121" height="7" rx="3.5"
+                              fill="#FFFFFF" opacity=".10"/>
+                        <rect x="236" y="97" width="72" height="7" rx="3.5"
+                              fill="#84A6FF"/>
+
+                        <rect x="236" y="111" width="121" height="7" rx="3.5"
+                              fill="#FFFFFF" opacity=".10"/>
+                        <rect x="236" y="111" width="105" height="7" rx="3.5"
+                              fill="#F4C76F"/>
+                    </g>
+
+                    <!-- Main floating analytics card -->
+                    <g class="float-three">
+                        <rect x="39" y="126" width="121" height="86" rx="12"
+                              fill="url(#cardGradient)"
+                              stroke="#FFFFFF" stroke-opacity=".45"/>
+
+                        <text x="52" y="144" fill="#6B7894"
+                              font-size="8" font-family="DM Sans, sans-serif">
+                            CLASS ATTENDANCE
+                        </text>
+
+                        <text x="52" y="165" fill="#172B53"
+                              font-size="20" font-weight="800"
+                              font-family="Manrope, sans-serif">
+                            92%
+                        </text>
+
+                        <rect x="52" y="175" width="94" height="4" rx="2"
+                              fill="#DDE5F4"/>
+
+                        <rect x="52" y="175" width="86" height="4" rx="2"
+                              fill="#4B79E8"/>
+
+                        <path d="M53 196L67 189L79 193L93 182L107 187L122 178L145 184"
+                              stroke="#46B995" stroke-width="2"
+                              stroke-linecap="round" stroke-linejoin="round"
+                              fill="none"/>
+                    </g>
+
+                    <!-- Student / teacher figure -->
+                    <g>
+                        <!-- Head -->
+                        <circle cx="210" cy="105" r="23" fill="#EFB990"/>
+
+                        <!-- Hair -->
+                        <path d="M187 103C185 84 198 77 211 80C227 80 236 92 231 106L224 97L217 95L201 98L191 109Z"
+                              fill="#202D49"/>
+
+                        <!-- Neck -->
+                        <path d="M202 123L202 138L218 138L218 123"
+                              fill="#EFB990"/>
+
+                        <!-- Body -->
+                        <path d="M183 144C187 133 197 131 210 131C223 131 233 136 238 148L250 207H170L183 144Z"
+                              fill="url(#personGradient)"/>
+
+                        <!-- Shirt details -->
+                        <path d="M201 137L210 148L219 137"
+                              stroke="#FFFFFF" stroke-opacity=".75"
+                              stroke-width="2" fill="none"/>
+
+                        <path d="M210 148V181"
+                              stroke="#FFFFFF" stroke-opacity=".45"
+                              stroke-width="1.5"/>
+
+                        <!-- Arm pointing to dashboard -->
+                        <path d="M230 149L248 126L268 111"
+                              stroke="#EFB990" stroke-width="13"
+                              stroke-linecap="round" stroke-linejoin="round"
+                              fill="none"/>
+
+                        <path d="M231 149L249 128"
+                              stroke="#7395F1" stroke-width="17"
+                              stroke-linecap="round" fill="none"/>
+
+                        <path d="M268 111L277 105"
+                              stroke="#EFB990" stroke-width="8"
+                              stroke-linecap="round" fill="none"/>
+
+                        <!-- Other arm -->
+                        <path d="M183 150L164 178L180 191"
+                              stroke="#7395F1" stroke-width="15"
+                              stroke-linecap="round" stroke-linejoin="round"
+                              fill="none"/>
+
+                        <path d="M180 191L191 194"
+                              stroke="#EFB990" stroke-width="9"
+                              stroke-linecap="round" fill="none"/>
+
+                        <!-- Legs -->
+                        <path d="M190 205L186 241"
+                              stroke="#DDE7FC" stroke-width="15"
+                              stroke-linecap="round" fill="none"/>
+
+                        <path d="M225 205L233 241"
+                              stroke="#DDE7FC" stroke-width="15"
+                              stroke-linecap="round" fill="none"/>
+
+                        <!-- Shoes -->
+                        <path d="M186 240L175 247L197 247"
+                              stroke="#172B53" stroke-width="8"
+                              stroke-linecap="round" stroke-linejoin="round"
+                              fill="none"/>
+
+                        <path d="M233 240L228 247L250 247"
+                              stroke="#172B53" stroke-width="8"
+                              stroke-linecap="round" stroke-linejoin="round"
+                              fill="none"/>
+                    </g>
+
+                    <!-- Small success badge -->
+                    <g class="float-one">
+                        <rect x="297" y="157" width="92" height="36" rx="10"
+                              fill="#FFFFFF"/>
+                        <circle cx="313" cy="175" r="8" fill="#D8F8EC"/>
+                        <path d="M309 175L312 178L317 172"
+                              stroke="#249D78" stroke-width="1.8"
+                              stroke-linecap="round" stroke-linejoin="round"
+                              fill="none"/>
+                        <text x="326" y="173" fill="#263956"
+                              font-size="8" font-weight="700"
+                              font-family="DM Sans, sans-serif">
+                            EXAM
+                        </text>
+                        <text x="326" y="183" fill="#6E7B94"
+                              font-size="7"
+                              font-family="DM Sans, sans-serif">
+                            Performance
+                        </text>
+                    </g>
+
+                    <!-- Ground shadow -->
+                    <ellipse cx="217" cy="258" rx="104" ry="9"
+                             fill="#091A3B" opacity=".20"/>
+
+                    <!-- Animated chart line -->
+                    <path class="chart-line"
+                          d="M130 67L149 56L163 62L178 46"
+                          stroke="#83E6CA" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"
+                          fill="none"/>
+                    <circle cx="178" cy="46" r="3.5" fill="#83E6CA"/>
+                </svg>
+            </div>
+
+            <div class="visual-footer">
+                <div class="footer-icon">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 3L20 6V11C20 16 16.6 19.4 12 21C7.4 19.4 4 16 4 11V6L12 3Z"
+                              stroke="currentColor" stroke-width="1.7"
+                              stroke-linejoin="round"/>
+                        <path d="M9 12L11 14L15.5 9.5"
+                              stroke="currentColor" stroke-width="1.7"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <strong>Your classroom, organized.</strong>
+                    A smarter way to manage every learning day.
+                </div>
+            </div>
+
+        </section>
+
+        <!-- RIGHT: LOGIN FORM -->
+        <section class="form-panel">
+            <div class="form-inner">
+
+                <!-- Mobile-only brand -->
+                <div class="mobile-brand">
+                    <img class="brand-logo" src="{% static 'images/modulus-logo.png' %}" alt="Modulus Edu logo">
+                    <div>
+                        <div class="brand-caption">COACHING MANAGEMENT SYSTEM</div>
+                    </div>
+                </div>
+
+                <div class="form-top-label">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 3L14.8 8.7L21 9.6L16.5 14L17.6 20.2L12 17.2L6.4 20.2L7.5 14L3 9.6L9.2 8.7L12 3Z"
+                              stroke="currentColor" stroke-width="1.6"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    TEACHER PORTAL
+                </div>
+
+                <h2 class="form-heading">Welcome back.</h2>
+
+                <p class="form-subtitle">
+                    Sign in to your account to manage classes,
+                    track attendance, and monitor student progress.
+                </p>
+
+                {% if form.errors %}
+                    <div class="error-box" role="alert">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9"
+                                    stroke="currentColor" stroke-width="1.8"/>
+                            <path d="M12 8V12.5M12 16H12.01"
+                                  stroke="currentColor" stroke-width="2"
+                                  stroke-linecap="round"/>
+                        </svg>
+                        <div>
+                            <strong>Unable to sign in.</strong><br>
+                            Please check your username and password and try again.
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if next and user.is_authenticated %}
+                    <div class="error-box" role="alert">
+                        Your account does not have permission to access that page.
+                        Please sign in with an authorized account.
+                    </div>
+                {% endif %}
+
+                <form method="post" class="login-form">
+                    {% csrf_token %}
+
+                    {% if next %}
+                        <input type="hidden" name="next" value="{{ next }}">
+                    {% endif %}
+
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label class="field-label" for="id_username">
+                                Username
+                            </label>
+                        </div>
+
+                        <div class="input-wrap">
+                            <svg class="input-icon"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 aria-hidden="true">
+                                <circle cx="12" cy="8" r="4"
+                                        stroke="currentColor" stroke-width="1.7"/>
+                                <path d="M4.5 20C4.5 16.4 7.5 14 12 14C16.5 14 19.5 16.4 19.5 20"
+                                      stroke="currentColor" stroke-width="1.7"
+                                      stroke-linecap="round"/>
+                            </svg>
+
+                            <input
+                                type="text"
+                                name="username"
+                                id="id_username"
+                                class="form-input"
+                                placeholder="Enter your username"
+                                autocomplete="username"
+                                autocapitalize="none"
+                                spellcheck="false"
+                                required
+                                autofocus
+                                value="{{ form.username.value|default_if_none:'' }}"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label class="field-label" for="id_password">
+                                Password
+                            </label>
+                        </div>
+
+                        <div class="input-wrap">
+                            <svg class="input-icon"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 aria-hidden="true">
+                                <rect x="5" y="10" width="14" height="11" rx="2"
+                                      stroke="currentColor" stroke-width="1.7"/>
+                                <path d="M8 10V7.5C8 5.3 9.8 3.5 12 3.5C14.2 3.5 16 5.3 16 7.5V10"
+                                      stroke="currentColor" stroke-width="1.7"
+                                      stroke-linecap="round"/>
+                                <circle cx="12" cy="15" r="1.2"
+                                        fill="currentColor"/>
+                            </svg>
+
+                            <input
+                                type="password"
+                                name="password"
+                                id="id_password"
+                                class="form-input"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                                style="padding-right: 46px;"
+                            >
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                id="togglePassword"
+                                aria-label="Show password"
+                                aria-pressed="false"
+                            >
+                                <svg id="eyeIcon"
+                                     viewBox="0 0 24 24"
+                                     fill="none"
+                                     aria-hidden="true">
+                                    <path d="M2.5 12S6 5.5 12 5.5S21.5 12 21.5 12S18 18.5 12 18.5S2.5 12 2.5 12Z"
+                                          stroke="currentColor" stroke-width="1.7"/>
+                                    <circle cx="12" cy="12" r="3"
+                                            stroke="currentColor" stroke-width="1.7"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="remember-label">
+                            <input type="checkbox" name="remember_me" value="1">
+                            <span>Remember me</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="sign-in-button">
+                        <span>Sign In to Dashboard</span>
+
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M5 12H19M12 5L19 12L12 19"
+                                  stroke="currentColor" stroke-width="1.8"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="secure-note">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 3L20 6V11C20 16 16.6 19.4 12 21C7.4 19.4 4 16 4 11V6L12 3Z"
+                              stroke="currentColor" stroke-width="1.7"
+                              stroke-linejoin="round"/>
+                        <path d="M9 12L11 14L15.5 9.5"
+                              stroke="currentColor" stroke-width="1.7"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Secure access for authorized staff
+                </div>
+
+                <div class="bottom-note">
+                    &copy; {% now "Y" %} Modulus Edu.<br>
+                    Designed to make teaching more organized.
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register("{% url 'service_worker' %}")
+                .catch((error) => console.error('Could not register the Modulus Edu service worker.', error));
+        });
+    }
+
+    // Show / hide password
+    const passwordInput = document.getElementById("id_password");
+    const togglePassword = document.getElementById("togglePassword");
+    const eyeIcon = document.getElementById("eyeIcon");
+
+    togglePassword.addEventListener("click", function () {
+        const isPassword = passwordInput.type === "password";
+
+        passwordInput.type = isPassword ? "text" : "password";
+
+        togglePassword.setAttribute(
+            "aria-label",
+            isPassword ? "Hide password" : "Show password"
+        );
+
+        togglePassword.setAttribute(
+            "aria-pressed",
+            isPassword ? "true" : "false"
+        );
+
+        if (isPassword) {
+            eyeIcon.innerHTML = `
+                <path d="M3 3L21 21"
+                      stroke="currentColor" stroke-width="1.7"
+                      stroke-linecap="round"/>
+                <path d="M10.6 10.7A2 2 0 0 0 13.3 13.4"
+                      stroke="currentColor" stroke-width="1.7"
+                      stroke-linecap="round"/>
+                <path d="M9.9 5.8C10.6 5.6 11.3 5.5 12 5.5
+                         C18 5.5 21.5 12 21.5 12
+                         S20.2 14.4 18 16.1"
+                      stroke="currentColor" stroke-width="1.7"
+                      stroke-linecap="round"/>
+                <path d="M6.2 6.3C3.8 8.2 2.5 12 2.5 12
+                         S6 18.5 12 18.5
+                         C13.4 18.5 14.6 18.2 15.8 17.6"
+                      stroke="currentColor" stroke-width="1.7"
+                      stroke-linecap="round"/>
+            `;
+        } else {
+            eyeIcon.innerHTML = `
+                <path d="M2.5 12S6 5.5 12 5.5S21.5 12 21.5 12
+                         S18 18.5 12 18.5S2.5 12 2.5 12Z"
+                      stroke="currentColor" stroke-width="1.7"/>
+                <circle cx="12" cy="12" r="3"
+                        stroke="currentColor" stroke-width="1.7"/>
+            `;
+        }
+    });
+</script>
+
+</body>
+</html>

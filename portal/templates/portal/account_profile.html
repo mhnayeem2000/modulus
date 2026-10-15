@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}আমার তথ্য{% endblock %}
+{% block page_title %}আমার তথ্য{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <span class="eyebrow">অ্যাকাউন্ট সেটিংস</span>
+    <h1>নিজের তথ্য</h1>
+    <p>{{ editable_details_label }} হালনাগাদ রাখুন। অ্যাকাউন্টের ভূমিকা এখানে পরিবর্তন করা যাবে না।</p>
+  </div>
+</section>
+<div class="account-settings-layout">
+  <article class="panel account-settings-card">
+    <div class="account-settings-heading">
+      <span class="account-settings-icon" aria-hidden="true">♙</span>
+      <div><h2>ব্যক্তিগত তথ্য</h2><p>{{ editable_details_label }} সংরক্ষণ করুন।</p></div>
+    </div>
+    <form method="post" class="account-settings-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-error" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}
+      <div class="field-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<span class="field-help">{{ field.help_text }}</span>{% endif %}
+        {% if field.errors %}{{ field.errors }}{% endif %}
+      </div>
+      {% endfor %}
+      <div class="account-settings-actions">
+        <button class="button button-primary" type="submit">তথ্য সংরক্ষণ</button>
+        <a class="button button-light" href="{% url 'dashboard' %}">ফিরে যান</a>
+      </div>
+    </form>
+  </article>
+  <aside class="panel account-identity-card">
+    <div class="account-identity-top">
+      <span class="account-identity-avatar" aria-hidden="true">{{ account_display_name|slice:":1"|upper }}</span>
+      <span><strong>{{ account_display_name }}</strong><small>{{ account_role_label }}</small></span>
+    </div>
+    <div class="account-identity-details">
+      <div><span>ব্যবহারকারীর নাম</span><strong>{{ profile_user.username }}</strong></div>
+      <div><span>অ্যাকাউন্টের ভূমিকা</span><strong>{{ account_role_label }}</strong></div>
+      <div><span>ইমেইল</span><strong>{{ profile_user.email|default:"যোগ করা হয়নি" }}</strong></div>
+    </div>
+    <p class="account-security-note">নিরাপত্তার জন্য ব্যবহারকারীর নাম ও অ্যাকাউন্টের ভূমিকা পরিবর্তন করা যায় না। পাসওয়ার্ড বদলাতে <a class="text-link" href="{% url 'account_password' %}">পাসওয়ার্ড পরিবর্তন</a> পাতায় যান।</p>
+  </aside>
+</div>
+{% endblock %}

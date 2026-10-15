@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}শিক্ষার্থীদের মতামত{% endblock %}
+{% block page_title %}শিক্ষার্থীদের মতামত{% endblock %}
+{% block content %}
+<section class="welcome-banner feedback-admin-welcome">
+  <div><span class="eyebrow">শিক্ষার্থীদের কাছ থেকে</span><h1>মতামত ও সহায়তার অনুরোধ</h1><p>ক্লাস, টপিক বা ব্যাকআপ ক্লাস নিয়ে শিক্ষার্থীদের পাঠানো কথা এখানে দেখুন।</p></div>
+  <span class="feedback-total"><strong>{{ feedback_count }}</strong><small>টি মতামত</small></span>
+</section>
+<section class="feedback-admin-list" aria-label="শিক্ষার্থীদের মতামতের তালিকা">
+  {% for feedback in feedback_entries %}
+  <article class="panel feedback-admin-card">
+    <div class="feedback-admin-card-heading">
+      <span class="feedback-category-icon" aria-hidden="true">✦</span>
+      <div class="feedback-admin-student"><strong>{{ feedback.student.name }}</strong><span>{{ feedback.student.get_year_group_display }} · আইডি {{ feedback.student.student_id }}</span></div>
+      <span class="feedback-category">{{ feedback.get_category_display }}</span>
+    </div>
+    <p class="feedback-admin-message">{{ feedback.message|linebreaksbr }}</p>
+    <time datetime="{{ feedback.created_at|date:'c' }}">{{ feedback.created_at|date:"j F, Y · g:i A" }}</time>
+  </article>
+  {% empty %}
+  <div class="panel feedback-admin-empty"><span>✦</span><strong>এখনো কোনো মতামত আসেনি</strong><p>শিক্ষার্থীরা মতামত পাঠালে এখানে দেখা যাবে।</p></div>
+  {% endfor %}
+</section>
+{% endblock %}

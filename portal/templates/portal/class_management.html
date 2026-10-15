@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}ক্লাস ও রুটিন{% endblock %}
+{% block page_title %}ক্লাস ও রুটিন{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">পড়ানোর পরিকল্পনা ও হিসাব</span><h1>ক্লাস ও রুটিন</h1><p>সাপ্তাহিক রুটিন ঠিক করুন, ক্লাস শেষে পড়ানো অধ্যায় লিখে রাখুন।</p></div></section>
+<section class="panel month-filter-panel"><form method="get" class="date-picker-form"><label for="teacher-month">মাসভিত্তিক কাজের হিসাব</label><input id="teacher-month" type="month" name="month" value="{{ month_value }}"><button class="button button-light button-small" type="submit">হিসাব দেখুন</button></form><div class="teacher-month-stats inline-month-stats"><div><strong>{{ monthly_sessions }}</strong><span>{{ month|date:"F Y" }}-এ ক্লাস</span></div><div><strong>{{ monthly_exams }}</strong><span>নেওয়া পরীক্ষা</span></div></div></section>
+{% if is_superadmin %}<section class="panel form-panel routine-admin-form"><div class="panel-heading"><div><span class="eyebrow">সাপ্তাহিক পরিকল্পনা</span><h2>{% if editing_routine %}রুটিনের ক্লাস সম্পাদনা{% else %}রুটিনে ক্লাস যোগ করুন{% endif %}</h2><p class="muted">বর্ষ, ব্যাচ ও শিক্ষক নির্বাচন করে নিয়মিত ক্লাসের সময় নির্ধারণ করুন।</p></div><span class="form-step">◷</span></div>
+    <form method="post" class="stacked-form">{% csrf_token %}<input type="hidden" name="form_type" value="routine">{% if editing_routine %}<input type="hidden" name="routine_id" value="{{ editing_routine.pk }}">{% endif %}
+      {% for field in routine_form %}<div class="field-group routine-field routine-field-{{ field.name }}{% if field.name == 'is_revision' %} revision-checkbox-field{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}{% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}</div>{% endfor %}
+      <button class="button button-primary button-full" type="submit">{% if editing_routine %}পরিবর্তন সংরক্ষণ করুন{% else %}রুটিন সংরক্ষণ করুন{% endif %} <span>→</span></button>
+      {% if editing_routine %}<a class="button button-light button-full" href="{% url 'class_management' %}">সম্পাদনা বাতিল</a>{% endif %}
+    </form>
+  </section>{% else %}<section class="panel form-panel class-session-form"><div class="panel-heading"><div><span class="eyebrow">ক্লাস শেষ হলে</span><h2>পরিচালিত ক্লাস লিখুন</h2></div><span class="form-step">＋</span></div>
+    {% if not has_class_today %}<p class="muted">আজকে আপনার কোনো ক্লাস ছিল না। অন্য দিনের তথ্য দিতে হলে সেই তারিখের রুটিন অনুযায়ী তারিখ নির্বাচন করুন।</p>{% else %}<p class="muted">শুধু ক্লাসের তারিখ দিন; শুরুর বা শেষের সময় প্রয়োজন নেই।</p>{% endif %}
+    <form method="post" class="stacked-form">{% csrf_token %}<input type="hidden" name="form_type" value="session">
+      {% for field in session_form %}<div class="field-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}</div>{% endfor %}
+      <button class="button button-primary button-full" type="submit">ক্লাসের তথ্য সংরক্ষণ করুন <span>→</span></button>
+    </form>
+  </section>{% endif %}
+<section class="content-grid student-dashboard-grid class-lists-grid">
+  <article class="panel management-routine-panel"><div class="panel-heading"><div><span class="eyebrow">সাপ্তাহিক পরিকল্পনা</span><h2>{% if is_superadmin %}পুরো কোচিংয়ের রুটিন{% else %}আমার সাপ্তাহিক রুটিন{% endif %}</h2><p class="muted">{% if is_superadmin %}সব শিক্ষক ও ব্যাচের সাপ্তাহিক ক্লাস এক নজরে দেখুন।{% else %}তোমার ক্লাস নেই—এমন দিনগুলো ফাঁকা থাকবে।{% endif %}</p></div><span class="intro-count">{{ routines|length }}টি</span></div>
+    {% if is_superadmin %}
+    <div class="routine-year-filter" data-routine-year-tabs>
+      <div class="year-tabs routine-year-tabs" role="tablist" aria-label="বর্ষ অনুযায়ী সাপ্তাহিক রুটিন">
+        <button class="year-tab active" type="button" role="tab" aria-selected="true" aria-controls="routine-year-first" data-routine-year="first">১ম বর্ষ</button>
+        <button class="year-tab" type="button" role="tab" aria-selected="false" aria-controls="routine-year-second" data-routine-year="second">২য় বর্ষ</button>
+      </div>
+    <div class="routine-year-groups">
+      {% for year_group in year_routine_groups %}
+      <section class="routine-year-card routine-year-{{ year_group.key }} routine-year-panel" id="routine-year-{{ year_group.key }}" role="tabpanel" data-routine-year-panel="{{ year_group.key }}"{% if year_group.key != 'first' %} hidden{% endif %}>
+        <header class="routine-year-heading">
+          <div><span class="routine-year-kicker">ব্যাচভিত্তিক সাপ্তাহিক সময়সূচি</span><h3>{{ year_group.label }}</h3></div>
+          <span class="routine-class-total">{{ year_group.class_count }}টি ক্লাস</span>
+        </header>
+        <div class="routine-day-grid">
+          {% for day in year_group.days %}
+          <article class="routine-day-card">
+            <header class="routine-day-heading">
+              <h4>{{ day.label }}</h4>
+              <span>{{ day.classes|length }}টি</span>
+            </header>
+            {% if day.classes %}
+              {% for routine in day.classes %}
+              <div class="routine-class-card">
+                <div class="routine-class-card-top">
+                  <span class="routine-class-index{% if routine.is_revision %} is-revision{% endif %}">{% if routine.is_revision %}রিভিশন ক্লাস{% elif forloop.counter == 1 %}১ম ক্লাস{% elif forloop.counter == 2 %}২য় ক্লাস{% elif forloop.counter == 3 %}৩য় ক্লাস{% elif forloop.counter == 4 %}৪র্থ ক্লাস{% else %}অতিরিক্ত ক্লাস{% endif %}</span>
+                  <span class="routine-class-time"><span>সময়</span>{{ routine.start_time|time:"g:i A" }}–{{ routine.end_time|time:"g:i A" }}</span>
+                </div>
+                <strong class="routine-class-title">{{ routine.subject }}</strong>
+                <div class="routine-class-details">
+                  <span class="routine-class-teacher"><span class="routine-detail-icon">শিক্ষক</span>{{ routine.teacher.first_name|default:routine.teacher.username }}</span>
+                  {% if routine.paper or routine.chapter %}<div class="routine-class-meta">
+                    {% if routine.paper %}<span class="routine-class-paper"><small>পত্র</small>{{ routine.paper }}</span>{% endif %}
+                    {% if routine.chapter %}<span class="routine-class-chapter"><small>অধ্যায়</small>{{ routine.chapter }}</span>{% endif %}
+                  </div>{% endif %}
+                </div>
+                <div class="routine-admin-actions">
+                  <a href="{% url 'class_management' %}?edit_routine={{ routine.pk }}">সম্পাদনা</a>
+                  <form method="post" onsubmit="return confirm('এই রুটিনটি মুছে ফেলতে চান?');">{% csrf_token %}<input type="hidden" name="action" value="delete_routine"><input type="hidden" name="routine_id" value="{{ routine.pk }}"><button type="submit">মুছুন</button></form>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <p class="routine-day-empty">এই দিনে কোনো ক্লাস নেই</p>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% empty %}
+      <div class="empty-state compact-empty"><span>◷</span><strong>এখনো রুটিন যোগ হয়নি</strong><p>রুটিনে ক্লাস যোগ করলে ১ম বা ২য় বর্ষের কার্ডে দেখা যাবে।</p></div>
+      {% endfor %}
+    </div>
+    </div>
+    {% else %}
+    <div class="weekly-routine-grid">
+      <div class="weekly-routine-header"><span>বার</span><span>১ম ক্লাস</span><span>২য় ক্লাস</span></div>
+      {% for day in weekday_rows %}
+      <div class="weekly-routine-row">
+        <div class="weekly-routine-day"><span class="weekly-day-mark">{{ forloop.counter|stringformat:"02d" }}</span><strong>{{ day.label }}</strong></div>
+        {% for slot in "12" %}
+          <div class="weekly-routine-slot">
+          {% if forloop.first %}
+            {% if day.first_class and is_superadmin or day.first_class and day.first_class.teacher_id == request.user.id %}
+              {% with routine=day.first_class %}
+              {% if routine.is_revision %}<span class="routine-revision-badge">রিভিশন ক্লাস</span>{% endif %}
+              <strong>{{ routine.get_year_group_display }} · {{ routine.subject }}{% if routine.paper %} · {{ routine.paper }}{% endif %}</strong>
+              <span>{% if is_superadmin %}{{ routine.teacher.get_full_name|default:routine.teacher.username }} · {% endif %}{{ routine.chapter|default:"অধ্যায় যোগ হয়নি" }}</span>
+              <small>{{ routine.start_time|time:"g:i A" }}–{{ routine.end_time|time:"g:i A" }}</small>
+              {% if is_superadmin %}<div class="routine-admin-actions"><a href="{% url 'class_management' %}?edit_routine={{ routine.pk }}">সম্পাদনা</a><form method="post" onsubmit="return confirm('এই রুটিনটি মুছে ফেলতে চান?');">{% csrf_token %}<input type="hidden" name="action" value="delete_routine"><input type="hidden" name="routine_id" value="{{ routine.pk }}"><button type="submit">মুছুন</button></form></div>{% endif %}
+              {% endwith %}
+            {% else %}<span class="weekly-routine-empty">কোনো ক্লাস নেই</span>{% endif %}
+          {% else %}
+            {% if day.later_classes %}
+              {% for routine in day.later_classes %}
+                {% if is_superadmin or routine.teacher_id == request.user.id %}
+                <div class="weekly-routine-additional">
+                  {% if routine.is_revision %}<span class="routine-revision-badge">রিভিশন ক্লাস</span>{% endif %}
+                  <strong>{{ routine.get_year_group_display }} · {{ routine.subject }}{% if routine.paper %} · {{ routine.paper }}{% endif %}</strong>
+                  <span>{% if is_superadmin %}{{ routine.teacher.get_full_name|default:routine.teacher.username }} · {% endif %}{{ routine.chapter|default:"অধ্যায় যোগ হয়নি" }}</span>
+                  <small>{{ routine.start_time|time:"g:i A" }}–{{ routine.end_time|time:"g:i A" }}</small>
+                  {% if is_superadmin %}<div class="routine-admin-actions"><a href="{% url 'class_management' %}?edit_routine={{ routine.pk }}">সম্পাদনা</a><form method="post" onsubmit="return confirm('এই রুটিনটি মুছে ফেলতে চান?');">{% csrf_token %}<input type="hidden" name="action" value="delete_routine"><input type="hidden" name="routine_id" value="{{ routine.pk }}"><button type="submit">মুছুন</button></form></div>{% endif %}
+                </div>
+                {% endif %}
+              {% endfor %}
+            {% else %}<span class="weekly-routine-empty">কোনো দ্বিতীয় ক্লাস নেই</span>{% endif %}
+          {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>{% if not routines %}<div class="empty-state compact-empty"><span>◷</span><strong>এখনো রুটিন যোগ হয়নি</strong><p>সুপার অ্যাডমিন রুটিন যোগ করলে এখানে দেখা যাবে।</p></div>{% endif %}
+    {% endif %}
+  </article>
+  <article class="panel"><div class="panel-heading"><div><span class="eyebrow">সাম্প্রতিক ক্লাস</span><h2>আমি যা পড়িয়েছি</h2></div><span class="intro-count">{{ sessions|length }}টি</span></div>
+    {% if sessions %}<div class="student-activity-list">{% for session in sessions %}<div class="student-activity-row"><span class="session-date"><strong>{{ session.date|date:"d" }}</strong><small>{{ session.date|date:"M" }}</small></span><span class="activity-description"><strong>{{ session.get_year_group_display }} · {{ session.subject }}</strong><small>{{ session.paper }} · {{ session.chapter }}{% if session.topic %} · {{ session.topic }}{% endif %}{% if is_superadmin %} · {{ session.teacher.get_full_name|default:session.teacher.username }}{% endif %}</small></span></div>{% endfor %}</div>{% else %}<div class="empty-state compact-empty"><span>▤</span><strong>কোনো ক্লাসের তথ্য নেই</strong><p>ক্লাস শেষ হলে অধ্যায় ও টপিক লিখে রাখুন।</p></div>{% endif %}
+  </article>
+  <article class="panel monthly-chapter-panel"><div class="panel-heading"><div><span class="eyebrow">পরীক্ষার হিসাব</span><h2>{{ month|date:"F Y" }}-এ কোন অধ্যায়ে পরীক্ষা নিয়েছেন</h2></div><a class="text-link" href="{% url 'exam_list' %}">পরীক্ষায় যান →</a></div>
+    {% if monthly_exam_chapters %}<div class="chapter-report-list">{% for item in monthly_exam_chapters %}<div class="chapter-report-row"><span><strong>{{ item.class_name }} · {{ item.paper }}</strong><small>{{ item.chapter }}</small></span><span class="count-chip count-present">{{ item.total }}টি পরীক্ষা</span></div>{% endfor %}</div>{% else %}<p class="muted report-empty">এই মাসে এখনো কোনো পরীক্ষা যোগ করা হয়নি।</p>{% endif %}
+  </article>
+</section>
+{% if is_superadmin %}
+<script>
+  document.querySelectorAll('[data-routine-year-tabs]').forEach((group) => {
+    const tabs = group.querySelectorAll('[data-routine-year]');
+    const panels = group.querySelectorAll('[data-routine-year-panel]');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const selectedYear = tab.dataset.routineYear;
+        tabs.forEach((item) => {
+          const selected = item === tab;
+          item.classList.toggle('active', selected);
+          item.setAttribute('aria-selected', String(selected));
+        });
+        panels.forEach((panel) => {
+          panel.hidden = panel.dataset.routineYearPanel !== selectedYear;
+        });
+      });
+    });
+  });
+
+  const revisionCheckbox = document.getElementById('id_routine-is_revision');
+  const weekdayInput = document.getElementById('id_routine-weekday');
+  const startInput = document.getElementById('id_routine-start_time');
+  const endInput = document.getElementById('id_routine-end_time');
+  if (revisionCheckbox && weekdayInput && startInput && endInput) {
+    const fillEndTime = () => {
+      if (!startInput.value) return;
+      const [hours, minutes] = startInput.value.split(':').map(Number);
+      const endMinutes = hours * 60 + minutes + 90;
+      const endValue = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+      const endOption = Array.from(endInput.options).find((option) => option.value === endValue);
+      if (!endOption) return;
+      Array.from(endInput.options).forEach((option) => {
+        option.disabled = Boolean(option.value) && option.value !== endValue;
+      });
+      endInput.value = endValue;
+    };
+    const updateTimeWindow = () => {
+      const revision = revisionCheckbox.checked;
+      const isFriday = weekdayInput.value === '4';
+      Array.from(startInput.options).forEach((option) => {
+        if (!option.value) return;
+        const isAllowed = isFriday
+          ? option.value >= '09:00' && option.value <= '10:30'
+          : revision
+            ? option.value >= '14:00' && option.value < '15:00'
+            : option.value >= '15:00' && option.value <= '17:30';
+        option.disabled = !isAllowed;
+      });
+      if (startInput.value && startInput.selectedOptions[0]?.disabled) {
+        startInput.value = isFriday ? '09:00' : revision ? '14:00' : '15:00';
+      }
+      fillEndTime();
+    };
+    startInput.addEventListener('change', fillEndTime);
+    revisionCheckbox.addEventListener('change', updateTimeWindow);
+    weekdayInput.addEventListener('change', updateTimeWindow);
+    updateTimeWindow();
+    fillEndTime();
+  }
+</script>
+{% endif %}
+{% endblock %}

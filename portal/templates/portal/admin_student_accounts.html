@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}শিক্ষার্থী অ্যাকাউন্ট{% endblock %}
+{% block page_title %}শিক্ষার্থী অ্যাকাউন্ট{% endblock %}
+{% block content %}
+<section class="welcome-banner admin-welcome fee-accounts-welcome">
+  <div>
+    <span class="eyebrow">সুপার অ্যাডমিন · বেতন ব্যবস্থাপনা</span>
+    <h1>শিক্ষার্থী অ্যাকাউন্ট</h1>
+    <p>মাসভিত্তিক বেতন রেকর্ড যোগ করুন, বকেয়া দেখুন এবং শিক্ষার্থীর হিসাব খুলে বিস্তারিত যাচাই করুন।</p>
+  </div>
+  <a class="button button-light" href="{% url 'admin_dashboard' %}">← ড্যাশবোর্ড</a>
+</section>
+
+<section class="panel fee-panel">
+  <div class="panel-heading">
+    <div>
+      <span class="eyebrow">বেতন রেকর্ড</span>
+      <h2>নতুন মাসের হিসাব যোগ বা হালনাগাদ</h2>
+      <p class="muted">একজন শিক্ষার্থীর একই মাসের রেকর্ড আপডেট হবে, আলাদা ডুপ্লিকেট তৈরি হবে না।</p>
+    </div>
+  </div>
+  <form method="post" class="fee-entry-form fee-entry-form-wide" aria-label="বেতন রেকর্ড ফর্ম">
+    {% csrf_token %}
+    <input type="hidden" name="student_fee_submit" value="1">
+    <div class="fee-form-grid">
+      <div>{{ student_fee_form.student.label_tag }}{{ student_fee_form.student }}{{ student_fee_form.student.errors }}</div>
+      <div>{{ student_fee_form.month.label_tag }}{{ student_fee_form.month }}{{ student_fee_form.month.errors }}</div>
+      <div>{{ student_fee_form.monthly_fee.label_tag }}{{ student_fee_form.monthly_fee }}{{ student_fee_form.monthly_fee.errors }}</div>
+      <div>{{ student_fee_form.amount_paid.label_tag }}{{ student_fee_form.amount_paid }}{{ student_fee_form.amount_paid.errors }}</div>
+      <div class="fee-form-note">{{ student_fee_form.note.label_tag }}{{ student_fee_form.note }}{{ student_fee_form.note.errors }}</div>
+    </div>
+    {% if student_fee_form.non_field_errors %}<div class="form-errors">{{ student_fee_form.non_field_errors }}</div>{% endif %}
+    <button class="button button-primary button-small" type="submit">বেতন রেকর্ড সংরক্ষণ</button>
+  </form>
+</section>
+
+<section class="panel fee-panel">
+  <div class="panel-heading">
+    <div>
+      <span class="eyebrow">শিক্ষার্থীদের হিসাব</span>
+      <h2>মাসভিত্তিক বেতন ও বকেয়া</h2>
+      <p class="muted">শিক্ষার্থীর কার্ড খুললে সব মাসের বেতন, জমা ও বাকি দেখা যাবে।</p>
+    </div>
+  </div>
+  <div class="fee-month-estimate-grid">
+    <article class="fee-month-estimate-card"><span>{{ current_month }} · মোট ধার্য</span><strong>{{ current_month_estimate }} টাকা</strong><small>{{ current_month_fee_set_count }} / {{ active_student_count }} শিক্ষার্থীর অঙ্ক নির্ধারিত</small></article>
+    <article class="fee-month-estimate-card is-due"><span>{{ current_month }} · এখনো আদায় বাকি</span><strong>{{ current_month_due_estimate }} টাকা</strong><small>ধার্য বেতন থেকে এ মাসে জমা বাদ দিয়ে</small></article>
+  </div>
+  <form method="get" class="fee-toolbar fee-accounts-toolbar" aria-label="বেতন ফিল্টার">
+    <label class="fee-filter-check">
+      <input type="checkbox" name="fee_due_only" value="1" {% if fee_due_only %}checked{% endif %}>
+      শুধু বকেয়া বা এখনো রেকর্ড নেই এমন শিক্ষার্থী
+    </label>
+    <label>
+      সাজানোর ক্রম
+      <select name="fee_order">
+        <option value="due_desc" {% if fee_order == 'due_desc' %}selected{% endif %}>বাকি বেশি আগে</option>
+        <option value="due_asc" {% if fee_order == 'due_asc' %}selected{% endif %}>বাকি কম আগে</option>
+        <option value="payment_desc" {% if fee_order == 'payment_desc' %}selected{% endif %}>আদায় বেশি আগে</option>
+        <option value="name" {% if fee_order == 'name' %}selected{% endif %}>নাম অনুযায়ী</option>
+      </select>
+    </label>
+    <button class="button button-light button-small" type="submit">ফিল্টার করুন</button>
+    {% if fee_due_only or fee_order != 'due_desc' %}<a class="button button-light button-small" href="{% url 'admin_student_accounts' %}">ফিল্টার মুছুন</a>{% endif %}
+  </form>
+
+  {% if student_fee_page %}
+  <div class="fee-student-list">
+    {% for row in student_fee_page %}
+    <article class="fee-student-item fee-student-account {% if row.total_due or not row.records %}fee-item-due{% else %}fee-item-clear{% endif %}">
+      <div class="fee-student-summary">
+        <div class="fee-student-main">
+          <span class="fee-avatar">{{ row.student.name|slice:":1" }}</span>
+          <div>
+            <strong>{{ row.student.name }}</strong>
+            <small>{{ row.student.student_id }} · {{ row.student.get_year_group_display }}</small>
+            {% if row.current_record %}<small>{{ current_month }} জমা: {{ row.current_record.amount_paid }} টাকা · বাকি: {{ row.current_record.due_amount }} টাকা</small>{% else %}<small>{{ current_month }}-এর রেকর্ড এখনো নেই</small>{% endif %}
+          </div>
+        </div>
+        <div class="fee-student-amounts">
+          <span class="fee-stat due">{{ row.total_due }} টাকা বাকি</span>
+          <span class="fee-stat paid">{{ row.total_paid }} টাকা দেওয়া</span>
+          <span class="fee-status {% if row.is_up_to_date %}fee-status-updated{% else %}fee-status-due{% endif %}">
+            {% if row.is_up_to_date %}Up to date{% else %}Due{% endif %}
+          </span>
+        </div>
+        <form method="post" class="fee-inline-month-form" aria-label="{{ row.student.name }}-এর এই মাসের ধার্য বেতন">
+          {% csrf_token %}
+          <input type="hidden" name="student_monthly_fee_submit" value="1">
+          <input type="hidden" name="student_id" value="{{ row.student.pk }}">
+          <label for="{{ row.monthly_fee_form.monthly_fee.id_for_label }}">{{ current_month }}-এর বেতন (টাকা)</label>
+          <div class="fee-inline-input">{{ row.monthly_fee_form.monthly_fee }}</div>
+          <button class="button button-primary button-small" type="submit">নির্ধারণ</button>
+          {% if row.monthly_fee_form.monthly_fee.errors %}<span class="form-errors">{{ row.monthly_fee_form.monthly_fee.errors }}</span>{% endif %}
+        </form>
+      </div>
+      <details class="fee-history-details">
+        <summary>মাসভিত্তিক হিসাব দেখুন <span aria-hidden="true">⌄</span></summary>
+        <div class="fee-detail-panel">
+        <div class="fee-detail-summary">
+          <div><span>মোট নির্ধারিত বেতন</span><strong>{{ row.total_fee }} টাকা</strong></div>
+          <div><span>মোট আদায়</span><strong>{{ row.total_paid }} টাকা</strong></div>
+          <div><span>মোট বাকি</span><strong>{{ row.total_due }} টাকা</strong></div>
+        </div>
+        {% if row.records %}
+        <div class="fee-month-list">
+          {% for record in row.records %}
+          <article class="fee-month-item">
+            <div class="fee-month-header">
+              <strong>{{ record.month }}</strong>
+              <span class="fee-month-status {% if record.due_amount %}fee-month-status-due{% else %}fee-month-status-paid{% endif %}">
+                {% if record.due_amount %}বাকি {{ record.due_amount }}{% else %}পরিশোধিত{% endif %}
+              </span>
+            </div>
+            <div class="fee-month-metrics">
+              <span>মাসিক বেতন: {{ record.monthly_fee }} টাকা</span>
+              <span>দেওয়া: {{ record.amount_paid }} টাকা</span>
+              <span>বাকি: {{ record.due_amount }} টাকা</span>
+            </div>
+            {% if record.note %}<p>{{ record.note }}</p>{% endif %}
+            <small>সর্বশেষ হালনাগাদ: {{ record.updated_at|date:"d M Y, h:i A" }}</small>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state compact-empty"><span>৳</span><strong>কোনো বেতন রেকর্ড নেই</strong><p>এই শিক্ষার্থীর জন্য নতুন মাসের বেতন রেকর্ড যোগ করুন।</p></div>
+        {% endif %}
+        </div>
+      </details>
+    </article>
+    {% endfor %}
+  </div>
+  {% if student_fee_page.paginator.num_pages > 1 %}
+  <nav class="pagination-row" aria-label="শিক্ষার্থী তালিকার পৃষ্ঠা">
+    {% if student_fee_page.has_previous %}
+    <a class="button button-light button-small" href="?page={{ student_fee_page.previous_page_number }}&fee_due_only={{ fee_due_only|yesno:'1,0' }}&fee_order={{ fee_order }}">আগের পাতা</a>
+    {% else %}<span></span>{% endif %}
+    <span>পৃষ্ঠা {{ student_fee_page.number }} / {{ student_fee_page.paginator.num_pages }} · মোট {{ student_fee_page.paginator.count }} জন</span>
+    {% if student_fee_page.has_next %}
+    <a class="button button-light button-small" href="?page={{ student_fee_page.next_page_number }}&fee_due_only={{ fee_due_only|yesno:'1,0' }}&fee_order={{ fee_order }}">পরের পাতা</a>
+    {% else %}<span></span>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+  <div class="empty-state compact-empty"><span>♧</span><strong>এই ফিল্টারে কোনো শিক্ষার্থী নেই</strong><p>ফিল্টার পরিবর্তন করে আবার চেষ্টা করুন।</p></div>
+  {% endif %}
+</section>
+{% endblock %}

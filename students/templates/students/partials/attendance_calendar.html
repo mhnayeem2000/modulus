@@ -1,0 +1,40 @@
+<section class="student-profile-panel student-attendance-calendar" aria-labelledby="attendance-calendar-title">
+  <div class="student-profile-section-heading attendance-calendar-heading">
+    <div><span class="eyebrow">উপস্থিতির ক্যালেন্ডার</span><h2 id="attendance-calendar-title">{{ attendance_calendar_month_label }}</h2></div>
+    {% if attendance_calendar_students %}<form method="get" class="attendance-calendar-student">
+      {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+      <input type="hidden" name="month" value="{{ attendance_calendar_month_value }}">
+      <label for="attendance-calendar-student">শিক্ষার্থী</label>
+      <select id="attendance-calendar-student" name="attendance_student">
+        {% for student_option in attendance_calendar_students %}<option value="{{ student_option.pk }}"{% if student_option.pk == attendance_calendar_student.pk %} selected{% endif %}>{{ student_option.name }} · {{ student_option.get_year_group_display }}</option>{% endfor %}
+      </select>
+      <button class="button button-light button-small" type="submit">দেখুন</button>
+    </form>
+    {% elif attendance_calendar_student %}<span class="attendance-calendar-student-name">{{ attendance_calendar_student.name }}</span>{% endif %}
+    <nav class="attendance-calendar-navigation" aria-label="মাস পরিবর্তন">
+      <a href="{{ attendance_calendar_previous_url }}" aria-label="আগের মাস" title="আগের মাস">‹</a>
+      <a href="{{ attendance_calendar_next_url }}" aria-label="পরের মাস" title="পরের মাস">›</a>
+    </nav>
+  </div>
+  <div class="attendance-calendar-summary" aria-label="এই মাসের উপস্থিতির সারসংক্ষেপ">
+    <span class="attendance-calendar-stat is-present"><i></i>উপস্থিত <strong>{{ attendance_calendar_counts.present }}</strong></span>
+    <span class="attendance-calendar-stat is-late"><i></i>দেরি <strong>{{ attendance_calendar_counts.late }}</strong></span>
+    <span class="attendance-calendar-stat is-absent"><i></i>অনুপস্থিত <strong>{{ attendance_calendar_counts.absent }}</strong></span>
+  </div>
+  <div class="attendance-calendar-grid" role="grid" aria-label="{{ attendance_calendar_month_label }}-এর উপস্থিতির ক্যালেন্ডার">
+    {% for weekday in attendance_calendar_weekdays %}<div class="attendance-calendar-weekday" role="columnheader">{{ weekday }}</div>{% endfor %}
+    {% for week in attendance_calendar_weeks %}
+      {% for day in week %}
+      <div class="attendance-calendar-day{% if not day.in_month %} is-outside{% endif %}{% if day.is_today %} is-today{% endif %}{% if day.status == 'present' %} is-present{% elif day.status == 'late' %} is-late{% elif day.status == 'absent' %} is-absent{% endif %}" role="gridcell"{% if day.in_month %} aria-label="{{ day.date|date:'j F Y' }}{% if day.status == 'present' %}, উপস্থিত{% elif day.status == 'late' %}, দেরিতে উপস্থিত{% elif day.status == 'absent' %}, অনুপস্থিত{% else %}, উপস্থিতি নথিভুক্ত হয়নি{% endif %}"{% endif %}>
+        {% if day.in_month %}<span class="attendance-calendar-date">{{ day.date|date:"j" }}</span>
+          {% if day.status == 'present' %}<span class="attendance-calendar-mark" aria-hidden="true">✓</span><span class="attendance-calendar-status">উপস্থিত</span>
+          {% elif day.status == 'late' %}<span class="attendance-calendar-mark" aria-hidden="true">◷</span><span class="attendance-calendar-status">দেরি</span>
+          {% elif day.status == 'absent' %}<span class="attendance-calendar-mark" aria-hidden="true">×</span><span class="attendance-calendar-status">অনুপস্থিত</span>
+          {% else %}<span class="attendance-calendar-unmarked">—</span>{% endif %}
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+  <p class="attendance-calendar-note">ফাঁকা দিন মানে উপস্থিতি নেওয়া হয়নি—এটি অনুপস্থিত হিসেবে গণনা করা হয়নি।</p>
+</section>

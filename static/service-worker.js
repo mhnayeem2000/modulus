@@ -1,0 +1,84 @@
+const CACHE_NAME = "modulus-static-v26";
+const STATIC_ASSETS = [
+  "/static/css/app.css?v=20261015-30",
+  "/static/js/curriculum-selects.js",
+  "/static/js/sms-ajax.js",
+  "/static/js/student-resource-tabs.js",
+  "/static/js/install-app.js?v=20261015-1",
+  "/static/images/Nav.png",
+  "/static/images/Nav-192.png",
+  "/static/images/Nav-512.png",
+  "/static/images/modulus-logo.png",
+  "/static/images/dark_logo.png"
+];
+const STATIC_ASSET_PATHS = new Set(STATIC_ASSETS.map((asset) => new URL(asset, self.location.origin).pathname));
+
+function cacheKeyFor(request, url) {
+  if (url.pathname === "/static/css/app.css") {
+    return new URL("/static/css/app.css?v=20261015-30", self.location.origin);
+  }
+  if (url.pathname === "/static/js/install-app.js") {
+    return new URL("/static/js/install-app.js?v=20261015-1", self.location.origin);
+  }
+  return url.pathname;
+}
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((cacheNames) => Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName.startsWith("modulus-static-") && cacheName !== CACHE_NAME)
+          .map((cacheName) => caches.delete(cacheName))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  const url = new URL(request.url);
+
+  if (request.method !== "GET" || url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() => new Response("You are offline. Please reconnect and try again.", {
+        status: 503,
+        statusText: "Service Unavailable",
+        headers: { "Content-Type": "text/plain; charset=utf-8" }
+      }))
+    );
+    return;
+  }
+
+  if (!STATIC_ASSET_PATHS.has(url.pathname)) {
+    return;
+  }
+
+  event.respondWith(
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const cacheKey = cacheKeyFor(request, url);
+      const cachedResponse = await cache.match(cacheKey);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      const response = await fetch(request);
+      if (response.ok && response.type === "basic") {
+        await cache.put(cacheKey, response.clone());
+      }
+      return response;
+    })
+  );
+});

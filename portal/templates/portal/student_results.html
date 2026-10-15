@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}আমার ফলাফল{% endblock %}
+{% block page_title %}আমার ফলাফল{% endblock %}
+{% block content %}
+<section class="page-intro"><div><span class="eyebrow">{{ student.get_year_group_display }}</span><h1>পরীক্ষার ফলাফল</h1><p>তোমার সব প্রকাশিত নম্বর এবং প্রতিটি পরীক্ষার বিস্তারিত।</p></div><span class="intro-count">{{ results|length }}টি ফল</span></section>
+<section class="panel">
+  {% if results %}<div class="table-wrap"><table class="data-table student-data-table"><thead><tr><th>পরীক্ষা ও তারিখ</th><th>বিষয় ও পত্র</th><th>অধ্যায় / টপিক</th><th>প্রাপ্ত নম্বর</th><th>শতকরা হার</th></tr></thead><tbody>{% for result in results %}
+  <tr><td><strong>{{ result.exam.title }}</strong><small>{{ result.exam.exam_date|date:"j F, Y" }}</small></td><td>{{ result.exam.paper }}</td><td>{{ result.exam.chapter }}<small>{{ result.exam.topic }}</small></td><td><span class="result-pill">{{ result.marks }} / {{ result.exam.total_marks }}</span></td><td>{% widthratio result.marks result.exam.total_marks 100 %}%</td></tr>
+  {% endfor %}</tbody></table></div>{% else %}<div class="empty-state"><span>✓</span><strong>এখনো কোনো ফলাফল নেই</strong><p>পরীক্ষার ফলাফল প্রকাশ হলে এই পাতায় দেখতে পাবে।</p></div>{% endif %}
+</section>
+{% endblock %}

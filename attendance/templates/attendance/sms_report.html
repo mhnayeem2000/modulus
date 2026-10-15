@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}SMS রিপোর্ট{% endblock %}
+{% block page_title %}SMS রিপোর্ট{% endblock %}
+{% block content %}
+<section class="page-intro sms-report-intro">
+  <div>
+    <span class="eyebrow">BulkSMSBD · রিপোর্ট</span>
+    <h1>SMS পাঠানোর রিপোর্ট</h1>
+    <p>পরীক্ষার নম্বর ও উপস্থিতির SMS, attempt, প্রাপক এবং save অনুযায়ী খরচ এক জায়গায় দেখুন।</p>
+  </div>
+</section>
+
+<section class="sms-report-primary-grid" aria-label="SMS delivery details">
+  <article class="panel attendance-panel sms-report-card">
+    <header class="sms-report-card-header">
+      <div><span class="sms-report-kicker">পরীক্ষার ফলাফল</span><h2>পরীক্ষার নম্বরের SMS</h2></div>
+      <span class="sms-report-count">{{ exam_log_page.paginator.count }}টি</span>
+    </header>
+    {% if exam_log_page.object_list %}
+    <div class="table-wrap sms-report-table-wrap"><table class="data-table sms-report-table">
+      <thead><tr><th>শিক্ষার্থী</th><th>বিষয় / পত্র / অধ্যায়</th><th>Rank</th><th>নম্বর</th><th>প্রাপক</th><th>ফলাফল</th><th>Attempt / Error</th></tr></thead>
+      <tbody>
+        {% for notification in exam_log_page %}
+        <tr>
+          <td><strong>{{ notification.result.student.name }}</strong><small>{{ notification.created_at|date:"j M Y, g:i A" }}</small></td>
+          <td>{{ notification.result.exam.subject|default:"বিষয় নেই" }}<small>{{ notification.result.exam.paper }} · {{ notification.result.exam.chapter }}</small></td>
+          <td>{% if notification.rank %}{{ notification.rank }}/{{ notification.rank_out_of }}{% else %}—{% endif %}</td>
+          <td><strong>{{ notification.marks }}/{{ notification.result.exam.total_marks }}</strong></td>
+          <td>{{ notification.recipient_phone|default:"নম্বর নেই" }}</td>
+          <td><span class="sms-report-status{% if notification.state == 'sent' %} is-success{% elif notification.state == 'failed' %} is-error{% elif notification.state == 'sending' or notification.state == 'pending' %} is-pending{% endif %}">{{ notification.get_state_display }}</span></td>
+          <td>{{ notification.attempts }}{% if notification.last_error %}<small class="sms-report-error">{{ notification.last_error }}</small>{% elif notification.provider_message_id %}<small>ID: {{ notification.provider_message_id }}</small>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}<div class="sms-report-empty"><span aria-hidden="true">▤</span><strong>কোনো পরীক্ষার SMS নেই</strong><p>Marks save করে SMS পাঠালে এখানে attempt দেখা যাবে।</p></div>{% endif %}
+    {% if exam_log_page.has_other_pages %}
+    <nav class="sms-report-pagination" aria-label="Exam SMS report pages">
+      {% if exam_log_page.has_previous %}<a class="button button-light button-small" href="?exam_page={{ exam_log_page.previous_page_number }}">← আগের</a>{% endif %}
+      <span>পৃষ্ঠা {{ exam_log_page.number }} / {{ exam_log_page.paginator.num_pages }}</span>
+      {% if exam_log_page.has_next %}<a class="button button-light button-small" href="?exam_page={{ exam_log_page.next_page_number }}">পরের →</a>{% endif %}
+    </nav>
+    {% endif %}
+  </article>
+
+  <article class="panel attendance-panel sms-report-card">
+    <header class="sms-report-card-header">
+      <div><span class="sms-report-kicker">Attendance delivery log</span><h2>SMS attempt-এর বিস্তারিত</h2></div>
+      <span class="sms-report-count">{{ log_page.paginator.count }}টি</span>
+    </header>
+    {% if log_page.object_list %}
+    <div class="table-wrap sms-report-table-wrap"><table class="data-table sms-report-table">
+      <thead><tr><th>শিক্ষার্থী / নম্বর</th><th>তারিখ</th><th>Status</th><th>ফলাফল</th><th>Attempt</th><th>Provider ID / Error</th></tr></thead>
+      <tbody>
+        {% for notification in log_page %}
+        <tr>
+          <td><strong>{{ notification.attendance.student.name }}</strong><small>{{ notification.recipient_phone|default:"নম্বর নেই" }}</small></td>
+          <td>{{ notification.attendance.date|date:"j M Y" }}<small>{{ notification.sent_at|default:notification.updated_at|date:"g:i A" }}</small></td>
+          <td>{{ notification.get_attendance_status_display }}</td>
+          <td><span class="sms-report-status{% if notification.state == 'sent' %} is-success{% elif notification.state == 'failed' %} is-error{% elif notification.state == 'sending' or notification.state == 'pending' %} is-pending{% endif %}">{{ notification.get_state_display }}</span></td>
+          <td>{{ notification.attempts }}</td>
+          <td>{% if notification.last_error %}<span class="sms-report-error">{{ notification.last_error }}</span>{% elif notification.provider_message_id %}{{ notification.provider_message_id }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}<div class="sms-report-empty"><span aria-hidden="true">↗</span><strong>কোনো Attendance SMS নেই</strong><p>Attendance save-এর SMS attempt এখানে দেখা যাবে।</p></div>{% endif %}
+    {% if log_page.has_other_pages %}
+    <nav class="sms-report-pagination" aria-label="Attendance SMS report pages">
+      {% if log_page.has_previous %}<a class="button button-light button-small" href="?page={{ log_page.previous_page_number }}">← আগের</a>{% endif %}
+      <span>পৃষ্ঠা {{ log_page.number }} / {{ log_page.paginator.num_pages }}</span>
+      {% if log_page.has_next %}<a class="button button-light button-small" href="?page={{ log_page.next_page_number }}">পরের →</a>{% endif %}
+    </nav>
+    {% endif %}
+  </article>
+</section>
+
+<section class="sms-report-recipient-grid" aria-label="Recipient SMS counts">
+  <article class="panel attendance-panel sms-report-card">
+    <header class="sms-report-card-header">
+      <div><span class="sms-report-kicker">Marks notification count</span><h2>পরীক্ষার ফল SMS: নম্বর ও শিক্ষার্থী</h2></div>
+      <span class="sms-report-count">{{ exam_recipient_totals|length }} জন</span>
+    </header>
+    {% if exam_recipient_totals %}
+    <div class="table-wrap sms-report-table-wrap"><table class="data-table sms-report-table">
+      <thead><tr><th>অভিভাবকের নম্বর</th><th>শিক্ষার্থী</th><th>গৃহীত</th><th>ব্যর্থ</th><th>Attempt</th></tr></thead>
+      <tbody>{% for recipient in exam_recipient_totals %}
+        <tr><td><strong>{{ recipient.recipient_phone|default:"নম্বর নেই" }}</strong></td><td>{{ recipient.result__student__name }}</td><td><span class="sms-report-number is-success">{{ recipient.sent }}</span></td><td><span class="sms-report-number{% if recipient.failed %} is-error{% endif %}">{{ recipient.failed }}</span></td><td>{{ recipient.total_attempts|default:0 }}</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+    {% else %}<p class="sms-report-empty-inline">এখনও পরীক্ষার ফলের SMS record নেই।</p>{% endif %}
+  </article>
+
+  <article class="panel attendance-panel sms-report-card">
+    <header class="sms-report-card-header">
+      <div><span class="sms-report-kicker">Attendance notification count</span><h2>নম্বর ও শিক্ষার্থী অনুযায়ী হিসাব</h2></div>
+      <span class="sms-report-count">{{ recipient_totals|length }} জন</span>
+    </header>
+    {% if recipient_totals %}
+    <div class="table-wrap sms-report-table-wrap"><table class="data-table sms-report-table">
+      <thead><tr><th>অভিভাবকের নম্বর</th><th>শিক্ষার্থী</th><th>গৃহীত</th><th>ব্যর্থ</th><th>Attempt</th></tr></thead>
+      <tbody>{% for recipient in recipient_totals %}
+        <tr><td><strong>{{ recipient.recipient_phone|default:"নম্বর নেই" }}</strong></td><td>{{ recipient.attendance__student__name }}</td><td><span class="sms-report-number is-success">{{ recipient.sent }}</span></td><td><span class="sms-report-number{% if recipient.failed %} is-error{% endif %}">{{ recipient.failed }}</span></td><td>{{ recipient.total_attempts|default:0 }}</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+    {% else %}<p class="sms-report-empty-inline">এখনও Attendance SMS record নেই।</p>{% endif %}
+  </article>
+</section>
+
+<section class="panel attendance-panel sms-report-card sms-report-batches">
+  <header class="sms-report-card-header sms-report-batch-header">
+    <div><span class="sms-report-kicker">Attendance save audit</span><h2>প্রতি save-এর SMS হিসাব</h2><p class="muted">SMS খরচ balance difference থেকে আনুমানিক; একই account অন্যত্র ব্যবহার হলে প্রকৃত খরচ আলাদা হতে পারে।</p></div>
+    <div class="sms-report-balance">
+      <div><strong>BulkSMSBD balance</strong><small>API key server-এ সুরক্ষিত</small></div>
+      <form method="post" action="{% url 'sms_balance_api' %}" data-sms-fallback-url="{% url 'sms_report' %}" data-sms-ajax-form>
+        {% csrf_token %}<input type="hidden" name="action" value="check_sms_balance">
+        <button class="button button-light button-small" type="submit">ব্যালেন্স দেখুন</button>
+      </form>
+      <p data-sms-balance-result role="status" {% if sms_balance == None %}hidden{% endif %}>বর্তমান: <strong>{% if sms_balance != None %}৳{{ sms_balance|floatformat:2 }}{% endif %}</strong></p>
+      <div class="alert alert-error" data-sms-ajax-error role="alert" hidden></div>
+    </div>
+  </header>
+  {% if batch_page.object_list %}
+  <div class="table-wrap sms-report-table-wrap"><table class="data-table sms-report-table">
+    <thead><tr><th>Save-এর সময়</th><th>Attendance তারিখ</th><th>SMS System</th><th>গৃহীত</th><th>ব্যর্থ</th><th>আনুমানিক খরচ</th><th>পরের balance</th></tr></thead>
+    <tbody>{% for batch in batch_page %}
+      <tr><td>{{ batch.created_at|date:"j M Y, g:i A" }}</td><td>{{ batch.attendance_date|date:"j M Y" }}</td><td><span class="sms-report-status{% if batch.sms_enabled %} is-success{% endif %}">{% if batch.sms_enabled %}চালু{% else %}বন্ধ ছিল{% endif %}</span></td><td>{{ batch.accepted_count }}</td><td>{{ batch.failed_count }}</td><td>{% if batch.estimated_cost != None %}৳{{ batch.estimated_cost|floatformat:2 }}{% else %}মাপা যায়নি{% endif %}</td><td>{% if batch.balance_after != None %}৳{{ batch.balance_after|floatformat:2 }}{% else %}—{% endif %}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="sms-report-empty-inline">এখনও কোনো SMS save report নেই।</p>{% endif %}
+  {% if batch_page.has_other_pages %}
+  <nav class="sms-report-pagination" aria-label="SMS save pages">
+    {% if batch_page.has_previous %}<a class="button button-light button-small" href="?batch_page={{ batch_page.previous_page_number }}">← আগের</a>{% endif %}
+    <span>পৃষ্ঠা {{ batch_page.number }} / {{ batch_page.paginator.num_pages }}</span>
+    {% if batch_page.has_next %}<a class="button button-light button-small" href="?batch_page={{ batch_page.next_page_number }}">পরের →</a>{% endif %}
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}

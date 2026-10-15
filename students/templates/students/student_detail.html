@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}{{ student.name }} · অগ্রগতি{% endblock %}
+{% block page_title %}শিক্ষার্থীর অগ্রগতি{% endblock %}
+{% block content %}
+<section class="student-profile">
+  <header class="student-profile-header">
+    <div>
+      <a class="student-profile-back" href="{% if user_role == 'student' %}{% url 'student_dashboard' %}{% else %}{% url 'student_list' %}{% endif %}">← {% if user_role == 'student' %}ড্যাশবোর্ড{% else %}শিক্ষার্থী তালিকা{% endif %}</a>
+      <span class="eyebrow">শিক্ষার্থী প্রোফাইল</span>
+      <h1>{{ student.name }}</h1>
+      <p>{{ student.student_id }} <span aria-hidden="true">·</span> {{ student.get_year_group_display }}{% if student.phone %} <span aria-hidden="true">·</span> {{ student.phone }}{% endif %}</p>
+    </div>
+    <span class="student-profile-avatar" aria-hidden="true">{{ student.name|slice:":1" }}</span>
+  </header>
+
+  {% include "students/partials/attendance_calendar.html" %}
+
+  <section class="student-profile-stats" aria-label="সারসংক্ষেপ">
+    <article class="student-profile-stat">
+      <span>উপস্থিতির দিন</span>
+      <strong>{{ attended_days }}</strong>
+      <small>উপস্থিত বা দেরিতে উপস্থিত</small>
+    </article>
+    <article class="student-profile-stat">
+      <span>পরীক্ষা দিয়েছে</span>
+      <strong>{{ exam_taken_count }}</strong>
+      <small>ফলাফল রেকর্ড করা পরীক্ষা</small>
+    </article>
+    <article class="student-profile-stat">
+      <span>পরীক্ষা বাকি</span>
+      <strong>{{ exam_missed_count }}</strong>
+      <small>ফলাফল নেই এমন অতীত পরীক্ষা</small>
+    </article>
+    <article class="student-profile-stat">
+      <span>মোট পরীক্ষা</span>
+      <strong>{{ exam_count }}</strong>
+      <small>এখন পর্যন্ত অনুষ্ঠিত</small>
+    </article>
+  </section>
+
+  {% if user_role != 'teacher' %}
+  <section class="panel fee-summary-panel student-fee-panel">
+    <div class="panel-heading">
+      <div><span class="eyebrow">বেতন ও বকেয়া</span><h2>বেতন সংক্ষিপ্তসার</h2><p class="muted">প্রতিটি মাসের বেতন, দেওয়া ও বকেয়া সংকলিত হয়েছে।</p></div>
+      <span class="fee-status {% if student_fee_up_to_date %}fee-status-updated{% else %}fee-status-due{% endif %}">{% if student_fee_up_to_date %}Up to date{% else %}Due{% endif %}</span>
+    </div>
+    <div class="fee-detail-summary">
+      <div><span>মোট বেতন</span><strong>{{ student_fee_total }} টাকা</strong></div>
+      <div><span>দেওয়া</span><strong>{{ student_fee_paid }} টাকা</strong></div>
+      <div><span>বাকি</span><strong>{{ student_fee_due }} টাকা</strong></div>
+    </div>
+    {% if student_fee_records %}
+    <div class="fee-month-list">
+      {% for record in student_fee_records %}
+      <div class="fee-month-item">
+        <div class="fee-month-header">
+          <strong>{{ record.month }}</strong>
+          <span class="fee-month-status {% if record.due_amount %}fee-month-status-due{% else %}fee-month-status-paid{% endif %}">{% if record.due_amount %}বাকি {{ record.due_amount }}{% else %}পরিশোধিত{% endif %}</span>
+        </div>
+        <div class="fee-month-metrics">
+          <span>মাসিক বেতন: {{ record.monthly_fee }} টাকা</span>
+          <span>দেওয়া: {{ record.amount_paid }} টাকা</span>
+          <span>বাকি: {{ record.due_amount }} টাকা</span>
+        </div>
+        {% if record.note %}<p>{{ record.note }}</p>{% endif %}
+        <small>রেকর্ড: {{ record.updated_at|date:"d M Y, h:i A" }}</small>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state compact-empty"><span>₹</span><strong>কোনো বেতন রেকর্ড নেই</strong><p>এই শিক্ষার্থীর জন্য এখনও বেতন সংক্রান্ত তথ্য যোগ হয়নি।</p></div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="student-profile-panel">
+    <div class="student-profile-section-heading">
+      <div><span class="eyebrow">উপস্থিতি</span><h2>মাসভিত্তিক উপস্থিতি</h2></div>
+      <p>গত ছয় মাসে প্রতিদিনের উপস্থিতি</p>
+    </div>
+    <div class="student-attendance-chart" role="img" aria-label="গত ছয় মাসের উপস্থিতির বার চার্ট">
+      {% for month in attendance_chart %}
+      <div class="student-attendance-column">
+        <span class="student-chart-value">{{ month.attended }}/{{ month.marked }}</span>
+        <div class="student-chart-track"><span style="height: {{ month.bar_height }}%"></span></div>
+        <span class="student-chart-label">{{ month.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="student-profile-note">প্রতিটি বারে উপস্থিত/দেরিতে উপস্থিতির দিন এবং মোট চিহ্নিত দিনের সংখ্যা দেখানো হয়েছে।</p>
+  </section>
+
+  <section class="student-profile-panel">
+    <div class="student-profile-section-heading">
+      <div><span class="eyebrow">পরীক্ষার ফলাফল</span><h2>পত্রভিত্তিক উন্নতি</h2></div>
+      <p>একই বিষয়ের পত্রে সময়ের সঙ্গে প্রাপ্ত নম্বরের তুলনা</p>
+    </div>
+    {% if progress_groups %}
+      <div class="student-progress-groups">
+        {% for group in progress_groups %}
+        <article class="student-progress-group">
+          <h3>{{ group.label }}</h3>
+          <div class="student-progress-chart" role="img" aria-label="{{ group.label }} পত্রের পরীক্ষার ফলাফলের চার্ট">
+            {% for result in group.results %}
+            <div class="student-progress-column" title="{{ result.title }}: {{ result.marks }}/{{ result.total_marks }} ({{ result.percentage|floatformat:1 }}%)">
+              <span class="student-chart-value">{{ result.percentage|floatformat:0 }}%</span>
+              <div class="student-chart-track"><span style="height: {{ result.bar_height }}%"></span></div>
+              <span class="student-chart-label">{{ result.date }}</span>
+              <small>{{ result.chapter }}</small>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="student-progress-results">
+            {% for result in group.results %}
+            <span>{{ result.title }}: <strong>{{ result.marks }}/{{ result.total_marks }}</strong></span>
+            {% endfor %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="student-profile-empty">এখনো কোনো পরীক্ষার ফলাফল যোগ করা হয়নি। ফলাফল যোগ হলে এখানে পত্রভিত্তিক অগ্রগতি দেখা যাবে।</div>
+    {% endif %}
+  </section>
+
+  <section class="student-profile-panel">
+    <div class="student-profile-section-heading">
+      <div><span class="eyebrow">পরীক্ষার ইতিহাস</span><h2>নম্বরসমূহ</h2></div>
+    </div>
+    {% if exam_results %}
+    <div class="student-exam-results">
+      {% for result in exam_results %}
+      <article class="student-exam-result">
+        <div><strong>{{ result.exam.title }}</strong><small>{{ result.exam.exam_date|date:"j F Y" }} · {{ result.exam.paper }} · {{ result.exam.chapter }}</small></div>
+        <b>{{ result.marks }} <span>/ {{ result.exam.total_marks }}</span></b>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="student-profile-empty">এখনো কোনো ফলাফল প্রকাশিত হয়নি।</div>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}
