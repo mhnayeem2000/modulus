@@ -1,9 +1,11 @@
-const CACHE_NAME = "modulus-static-v26";
+const CACHE_NAME = "modulus-static-v54";
 const STATIC_ASSETS = [
-  "/static/css/app.css?v=20261015-30",
+  "/static/css/app.css?v=20261024-4",
   "/static/js/curriculum-selects.js",
+  "/static/js/study-planner.js?v=20261023-8",
+  "/static/js/topic-practice.js?v=20261024-1",
   "/static/js/sms-ajax.js",
-  "/static/js/student-resource-tabs.js",
+  "/static/js/student-resource-tabs.js?v=20261016-2",
   "/static/js/install-app.js?v=20261015-1",
   "/static/images/Nav.png",
   "/static/images/Nav-192.png",
@@ -15,10 +17,19 @@ const STATIC_ASSET_PATHS = new Set(STATIC_ASSETS.map((asset) => new URL(asset, s
 
 function cacheKeyFor(request, url) {
   if (url.pathname === "/static/css/app.css") {
-    return new URL("/static/css/app.css?v=20261015-30", self.location.origin);
+    return new URL("/static/css/app.css?v=20261024-4", self.location.origin);
+  }
+  if (url.pathname === "/static/js/study-planner.js") {
+    return new URL("/static/js/study-planner.js?v=20261023-8", self.location.origin);
+  }
+  if (url.pathname === "/static/js/topic-practice.js") {
+    return new URL("/static/js/topic-practice.js?v=20261024-1", self.location.origin);
   }
   if (url.pathname === "/static/js/install-app.js") {
     return new URL("/static/js/install-app.js?v=20261015-1", self.location.origin);
+  }
+  if (url.pathname === "/static/js/student-resource-tabs.js") {
+    return new URL("/static/js/student-resource-tabs.js?v=20261016-2", self.location.origin);
   }
   return url.pathname;
 }

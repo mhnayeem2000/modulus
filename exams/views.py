@@ -1,9 +1,14 @@
 from decimal import Decimal, InvalidOperation
+from calendar import Calendar
+from datetime import date, timedelta
 
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 
 from attendance.models import AttendanceSMSSettings
 from portal.access import role_required
@@ -23,9 +28,52 @@ def exam_list(request):
         return redirect('exam_list')
 
     exams = Exam.objects.all() if request.user.is_superuser else Exam.objects.filter(created_by=request.user)
+    exams = exams.annotate(result_count=Count('results')).order_by('-exam_date', '-created_at')
+    page_obj = Paginator(exams, 8).get_page(request.GET.get('page'))
+
+    today = timezone.localdate()
+    try:
+        year_text, month_text = request.GET.get('month', '').split('-', 1)
+        calendar_month = date(int(year_text), int(month_text), 1)
+    except (TypeError, ValueError):
+        calendar_month = today.replace(day=1)
+    next_month = (
+        date(calendar_month.year + 1, 1, 1)
+        if calendar_month.month == 12
+        else date(calendar_month.year, calendar_month.month + 1, 1)
+    )
+    previous_month = calendar_month - timedelta(days=1)
+    previous_month = previous_month.replace(day=1)
+    calendar_exams = exams.filter(
+        exam_date__gte=calendar_month,
+        exam_date__lt=next_month,
+    )
+    exams_by_date = {}
+    for exam in calendar_exams:
+        exams_by_date.setdefault(exam.exam_date, []).append(exam)
+    calendar_days = [
+        [
+            {
+                'date': day,
+                'in_month': day.month == calendar_month.month,
+                'exams': exams_by_date.get(day, []),
+            }
+            for day in week
+        ]
+        for week in Calendar(firstweekday=0).monthdatescalendar(
+            calendar_month.year,
+            calendar_month.month,
+        )
+    ]
     return render(request, 'exams/exam_list.html', {
         'form': form,
-        'exams': exams,
+        'exams': page_obj.object_list,
+        'page_obj': page_obj,
+        'calendar_month': calendar_month,
+        'previous_month': previous_month,
+        'next_month': next_month,
+        'calendar_days': calendar_days,
+        'calendar_weekdays': ['সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি', 'রবি'],
     })
 
 

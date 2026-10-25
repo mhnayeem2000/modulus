@@ -50,7 +50,7 @@ from .models import (
     UserProfile,
 )
 from .routine_version import get_teacher_routine_version
-from .resources import STUDENT_BOOK_SECTIONS
+from .resources import STUDENT_BOOK_SECTIONS, mobile_pdf_download_url
 from .study_progress import (
     build_class_session_progress,
     get_study_report_date,
@@ -410,6 +410,7 @@ def build_weekday_rows(routines):
             'label': label,
             'first_class': routines_by_weekday.get(weekday, [None])[0],
             'later_classes': routines_by_weekday.get(weekday, [])[1:],
+            'classes': routines_by_weekday.get(weekday, []),
         }
         for weekday, label in Routine.Weekday.choices
     ]
@@ -420,6 +421,15 @@ def build_year_routine_groups(routines):
         ('first', '১ম বর্ষ'),
         ('second', '২য় বর্ষ'),
     ]
+    weekdays = (
+        (Routine.Weekday.MONDAY, Routine.Weekday.MONDAY.label),
+        (Routine.Weekday.TUESDAY, Routine.Weekday.TUESDAY.label),
+        (Routine.Weekday.WEDNESDAY, Routine.Weekday.WEDNESDAY.label),
+        (Routine.Weekday.THURSDAY, Routine.Weekday.THURSDAY.label),
+        (Routine.Weekday.FRIDAY, Routine.Weekday.FRIDAY.label),
+        (Routine.Weekday.SATURDAY, Routine.Weekday.SATURDAY.label),
+        (Routine.Weekday.SUNDAY, Routine.Weekday.SUNDAY.label),
+    )
     routines_by_year = {key: [] for key, _ in routine_years}
     for routine in routines:
         routines_by_year[routine.year_group].append(routine)
@@ -441,7 +451,7 @@ def build_year_routine_groups(routines):
                         key=lambda routine: (routine.start_time, routine.pk),
                     ),
                 }
-                for weekday, label in Routine.Weekday.choices
+                for weekday, label in weekdays
             ],
         }
         for key, label in routine_years
@@ -470,6 +480,16 @@ def student_materials(request):
     selected_kind = request.GET.get('kind', LearningMaterial.Kind.SHEET)
     if selected_kind not in (*LearningMaterial.Kind.values, 'pdf'):
         selected_kind = LearningMaterial.Kind.SHEET
+    book_sections = [
+        {
+            **section,
+            'chapters': [
+                (chapter, url, mobile_pdf_download_url(url))
+                for chapter, url in section['chapters']
+            ],
+        }
+        for section in STUDENT_BOOK_SECTIONS
+    ] if selected_kind == 'pdf' else []
     material_groups = {
         kind: LearningMaterial.objects.filter(
             Q(year_group='') | Q(year_group=student.year_group),
@@ -485,7 +505,7 @@ def student_materials(request):
         'selected_kind': selected_kind,
         'material_kinds': LearningMaterial.Kind.choices,
         'is_books_page': selected_kind == 'pdf',
-        'book_sections': STUDENT_BOOK_SECTIONS if selected_kind == 'pdf' else [],
+        'book_sections': book_sections,
         'book_count': (
             sum(len(section['chapters']) for section in STUDENT_BOOK_SECTIONS)
             if selected_kind == 'pdf'

@@ -327,3 +327,334 @@ class StudentFeedback(models.Model):
 
     def __str__(self):
         return f'{self.student.name} · {self.get_category_display()}'
+
+
+class StudentStudyPreference(models.Model):
+    student = models.OneToOneField(
+        'students.Student',
+        on_delete=models.CASCADE,
+        related_name='study_preference',
+    )
+    hsc_year = models.PositiveSmallIntegerField(default=2027)
+    subjects = models.JSONField(default=list, blank=True)
+    exam_date = models.DateField('পরবর্তী পরীক্ষার তারিখ', null=True, blank=True)
+    preferred_study_hours = models.PositiveSmallIntegerField(default=2)
+    session_duration_minutes = models.PositiveSmallIntegerField(default=60)
+    break_duration_minutes = models.PositiveSmallIntegerField(default=15)
+    weekly_target_hours = models.PositiveSmallIntegerField(default=10)
+    rest_days = models.JSONField(default=list, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'শিক্ষার্থীর পড়ার পছন্দ'
+        verbose_name_plural = 'শিক্ষার্থীদের পড়ার পছন্দ'
+
+    def __str__(self):
+        return f'{self.student.name} · Study preferences'
+
+
+class StudentScheduleInterval(models.Model):
+    class Kind(models.TextChoices):
+        AVAILABLE = 'available', 'পড়ার সময়'
+        COLLEGE = 'college', 'কলেজ'
+        COACHING = 'coaching', 'কোচিং'
+
+    student = models.ForeignKey(
+        'students.Student',
+        on_delete=models.CASCADE,
+        related_name='study_schedule_intervals',
+    )
+    weekday = models.PositiveSmallIntegerField(choices=Routine.Weekday.choices)
+    kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.AVAILABLE)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    class Meta:
+        ordering = ['weekday', 'start_time']
+        indexes = [models.Index(fields=['student', 'weekday'])]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(end_time__gt=models.F('start_time')),
+                name='study_interval_end_after_start',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.student.name} · {self.get_weekday_display()} · {self.start_time}-{self.end_time}'
+
+
+class StudentChapterProgress(models.Model):
+    class Status(models.TextChoices):
+        NOT_STARTED = 'not_started', 'শুরু হয়নি'
+        IN_PROGRESS = 'in_progress', 'চলছে'
+        COMPLETED = 'completed', 'সম্পন্ন'
+
+    student = models.ForeignKey(
+        'students.Student',
+        on_delete=models.CASCADE,
+        related_name='chapter_study_progress',
+    )
+    subject = models.CharField(max_length=100)
+    paper = models.CharField(max_length=100, blank=True)
+    chapter = models.CharField(max_length=120)
+    topic = models.CharField(max_length=120, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.NOT_STARTED)
+    is_difficult = models.BooleanField(default=False)
+    needs_revision = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['subject', 'paper', 'chapter', 'topic']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'subject', 'paper', 'chapter', 'topic'],
+                name='unique_student_chapter_topic_progress',
+            ),
+        ]
+        indexes = [models.Index(fields=['student', 'status'])]
+
+    def __str__(self):
+        return f'{self.student.name} · {self.subject} · {self.chapter}'
+
+
+class TeacherStudyAssignment(models.Model):
+    class TaskType(models.TextChoices):
+        HOMEWORK = 'homework', 'Homework'
+        LEARN = 'learn', 'Learn'
+        REVISE = 'revise', 'Revise'
+        MCQ = 'mcq', 'MCQ'
+        CQ = 'cq', 'CQ'
+        NUMERICAL = 'numerical', 'Numerical'
+        MOCK_TEST = 'mock_test', 'Mock Test'
+
+    class Priority(models.TextChoices):
+        LOW = 'low', 'Low'
+        NORMAL = 'normal', 'Normal'
+        HIGH = 'high', 'High'
+        MANDATORY = 'mandatory', 'Mandatory'
+
+    teacher = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='study_assignments',
+    )
+    student = models.ForeignKey(
+        'students.Student',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='teacher_study_assignments',
+    )
+    class_name = models.CharField(max_length=60, blank=True)
+    year_group = models.CharField(max_length=10, choices=BATCH_CHOICES, blank=True)
+    subject = models.CharField(max_length=100)
+    paper = models.CharField(max_length=100, blank=True)
+    chapter = models.CharField(max_length=120, blank=True)
+    topic = models.CharField(max_length=120, blank=True)
+    task_type = models.CharField(max_length=12, choices=TaskType.choices, default=TaskType.HOMEWORK)
+    description = models.CharField(max_length=240)
+    instructions = models.TextField(blank=True, max_length=2000)
+    assigned_date = models.DateField(default=timezone.localdate)
+    deadline = models.DateField()
+    estimated_duration_minutes = models.PositiveSmallIntegerField(default=60)
+    priority = models.CharField(max_length=12, choices=Priority.choices, default=Priority.NORMAL)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['deadline', '-priority', '-created_at']
+        indexes = [
+            models.Index(fields=['year_group', 'class_name', 'deadline']),
+            models.Index(fields=['student', 'deadline']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(student__isnull=False)
+                    | (models.Q(class_name__gt='') & models.Q(year_group__gt=''))
+                ),
+                name='study_assignment_has_target',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.subject} · {self.description}'
+
+
+class TeacherAssignmentProgress(models.Model):
+    assignment = models.ForeignKey(
+        TeacherStudyAssignment,
+        on_delete=models.CASCADE,
+        related_name='student_progress',
+    )
+    student = models.ForeignKey(
+        'students.Student',
+        on_delete=models.CASCADE,
+        related_name='teacher_assignment_progress',
+    )
+    is_completed = models.BooleanField(default=False)
+    reschedule_requested = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['assignment', 'student'],
+                name='unique_teacher_assignment_student_progress',
+            ),
+        ]
+        indexes = [models.Index(fields=['student', 'is_completed'])]
+
+    def __str__(self):
+        return f'{self.student.name} · {self.assignment}'
+
+
+class WeeklyStudyPlan(models.Model):
+    student = models.ForeignKey(
+        'students.Student',
+        on_delete=models.CASCADE,
+        related_name='weekly_study_plans',
+    )
+    week_start = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    generation_note = models.CharField(max_length=240, blank=True)
+    question_bank = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        ordering = ['-week_start']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'week_start'],
+                name='unique_student_study_plan_week',
+            ),
+        ]
+        indexes = [models.Index(fields=['student', '-week_start'])]
+
+    def __str__(self):
+        return f'{self.student.name} · week of {self.week_start}'
+
+
+class StudyPlanTask(models.Model):
+    class Source(models.TextChoices):
+        AI = 'ai', 'AI Recommended'
+        TEACHER = 'teacher', 'Teacher Assigned'
+
+    class Status(models.TextChoices):
+        NOT_STARTED = 'not_started', 'Not Started'
+        IN_PROGRESS = 'in_progress', 'In Progress'
+        COMPLETED = 'completed', 'Completed'
+        SKIPPED = 'skipped', 'Skipped'
+        RESCHEDULED = 'rescheduled', 'Rescheduled'
+
+    plan = models.ForeignKey(WeeklyStudyPlan, on_delete=models.CASCADE, related_name='tasks')
+    assignment = models.ForeignKey(
+        TeacherStudyAssignment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='planned_tasks',
+    )
+    source = models.CharField(max_length=10, choices=Source.choices)
+    task_type = models.CharField(max_length=12, choices=TeacherStudyAssignment.TaskType.choices)
+    subject = models.CharField(max_length=100)
+    paper = models.CharField(max_length=100, blank=True)
+    chapter = models.CharField(max_length=120, blank=True)
+    topic = models.CharField(max_length=120, blank=True)
+    description = models.CharField(max_length=240)
+    expected_outcome = models.CharField(max_length=240, blank=True)
+    recommendation_reason = models.CharField(max_length=240, blank=True)
+    scheduled_date = models.DateField(null=True, blank=True)
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    duration_minutes = models.PositiveSmallIntegerField()
+    priority = models.CharField(max_length=12, choices=TeacherStudyAssignment.Priority.choices)
+    status = models.CharField(max_length=14, choices=Status.choices, default=Status.NOT_STARTED)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['scheduled_date', 'start_time', '-priority', 'pk']
+        indexes = [models.Index(fields=['plan', 'scheduled_date', 'status'])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['plan', 'assignment'],
+                name='unique_assignment_in_study_plan',
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(end_time__gt=models.F('start_time'))
+                    | models.Q(start_time__isnull=True, end_time__isnull=True)
+                ),
+                name='study_task_end_after_start',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.subject} · {self.description}'
+
+
+class TopicPracticeSession(models.Model):
+    class QuestionType(models.TextChoices):
+        CQ = 'cq', 'সৃজনশীল (CQ)'
+        MCQ = 'mcq', 'বহুনির্বাচনী (MCQ)'
+        KO = 'ko', 'জ্ঞানমূলক (ক)'
+        KHO = 'kho', 'অনুধাবনমূলক (খ)'
+
+    student = models.ForeignKey(
+        'students.Student',
+        on_delete=models.CASCADE,
+        related_name='topic_practice_sessions',
+    )
+    subject = models.CharField(max_length=100)
+    paper = models.CharField(max_length=100)
+    chapter = models.CharField(max_length=120)
+    topic = models.CharField(max_length=160)
+    question_type = models.CharField(max_length=4, choices=QuestionType.choices)
+    sources = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        indexes = [
+            models.Index(fields=['student', '-created_at']),
+            models.Index(fields=['student', 'subject', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.student.name} · {self.subject} · {self.topic}'
+
+
+class TopicPracticeQuestion(models.Model):
+    class Status(models.TextChoices):
+        UNMARKED = 'unmarked', 'এখনো mark করা হয়নি'
+        PRACTICED = 'practiced', 'পড়েছি/সমাধান করেছি'
+        NEEDS_HELP = 'needs_help', 'সমস্যা হয়েছে'
+
+    session = models.ForeignKey(
+        TopicPracticeSession,
+        on_delete=models.CASCADE,
+        related_name='questions',
+    )
+    sequence = models.PositiveIntegerField()
+    prompt = models.TextField()
+    choices = models.JSONField(default=list, blank=True)
+    answer = models.TextField(blank=True)
+    explanation = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=12,
+        choices=Status.choices,
+        default=Status.UNMARKED,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['sequence', 'pk']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['session', 'sequence'],
+                name='unique_topic_practice_question_sequence',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.session.topic} · #{self.sequence}'

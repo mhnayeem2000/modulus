@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Topic Practice{% endblock %}
+{% block page_title %}Topic Practice{% endblock %}
+{% block content_wrapper_class %}study-planner-page{% endblock %}
+{% block content %}
+<div class="topic-practice-page" data-topic-practice-root>
+  <header class="practice-hero">
+    <span class="eyebrow">TOPIC PRACTICE</span>
+    <h1>যে topic পড়বে, সেখান থেকেই practice 🌱</h1>
+    <p>বিষয়, paper, chapter ও topic বেছে CQ, MCQ, ক (জ্ঞান) অথবা খ (অনুধাবন) practice তৈরি করো। তোমার প্রশ্ন ও progress নিজে থেকেই save থাকবে।</p>
+  </header>
+
+  {% if messages %}{% for message in messages %}<div class="planner-insight" role="status"><p>{{ message }}</p></div>{% endfor %}{% endif %}
+  <div class="practice-feedback" data-practice-feedback role="status" hidden></div>
+  <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+  <section class="panel practice-recommendation-panel">
+    <div class="panel-heading"><div><span class="eyebrow">AI STUDY GUIDE</span><h2>এই chapter-এ কোন topic আগে পড়বে?</h2><p class="muted">একটি chapter বেছে নাও—AI CQ ও MCQ-এর জন্য আলাদা করে অগ্রাধিকার topic-এর নাম সাজেস্ট করবে; কোনো প্রশ্ন তৈরি করবে না।</p></div></div>
+    <form method="post" action="{% url 'recommend_chapter_topics' %}" class="practice-form" data-topic-recommendation>
+      {% csrf_token %}
+      <label class="practice-field"><span>বিষয়</span><select name="subject" required data-recommend-subject data-curriculum="{{ curriculum_json }}"><option value="">বিষয় নির্বাচন করো</option>{% for value, label in subjects %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+      <label class="practice-field"><span>Paper</span><select name="paper" required data-recommend-paper><option value="">আগে বিষয় বেছে নাও</option></select></label>
+      <label class="practice-field"><span>Chapter</span><select name="chapter" required data-recommend-chapter><option value="">আগে paper বেছে নাও</option></select></label>
+      <button class="button button-primary practice-submit" type="submit">Topic সাজেস্ট করো <span>→</span></button>
+    </form>
+    <div class="practice-loading" data-recommendation-loading role="status" aria-live="polite" hidden><span class="practice-loading-spinner" aria-hidden="true"></span><span data-recommendation-loading-text>AI chapter-এর গুরুত্বপূর্ণ topic বাছাই করছে…</span><small>একটু অপেক্ষা করো।</small></div>
+    <p class="practice-source-note">সাজেশনটি syllabus ও প্রচলিত HSC board-question pattern-ভিত্তিক AI অগ্রাধিকার; নির্দিষ্ট past-paper dataset থেকে যাচাইকৃত frequency analysis নয়।</p>
+    <div class="practice-recommendation-output" data-recommendation-output aria-live="polite"><p class="practice-empty">বিষয়, paper ও chapter বেছে নিলে topic-এর তালিকা এখানে দেখাবে।</p></div>
+  </section>
+
+  <section class="panel practice-form-panel">
+    <div class="panel-heading"><div><span class="eyebrow">নতুন practice set</span><h2>কোন topic practice করবে?</h2><p class="muted">প্রতিটি নতুন set ও পরের batch তোমার account-এ save হবে।</p></div></div>
+    <form method="post" action="{% url 'create_topic_practice' %}" class="practice-form" data-practice-create>
+      {% csrf_token %}
+      <input type="hidden" name="history_date" value="{{ selected_date }}">
+      <input type="hidden" name="history_subject" value="{{ selected_subject }}">
+      <label class="practice-field"><span>বিষয়</span><select name="subject" required data-practice-subject data-curriculum="{{ curriculum_json }}"><option value="">বিষয় নির্বাচন করো</option>{% for value, label in subjects %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+      <label class="practice-field"><span>Paper</span><select name="paper" required data-practice-paper><option value="">আগে বিষয় বেছে নাও</option></select></label>
+      <label class="practice-field"><span>Chapter</span><select name="chapter" required data-practice-chapter><option value="">আগে paper বেছে নাও</option></select></label>
+      <label class="practice-field practice-topic-field"><span>Topic-এর নাম</span><input type="text" name="topic" maxlength="160" required placeholder="যেমন: ভেক্টরের যোগ"></label>
+      <label class="practice-field"><span>প্রশ্নের ধরন</span><select name="question_type" required><option value="">প্রশ্নের ধরন বেছে নাও</option><option value="cq">সৃজনশীল (CQ)</option><option value="mcq">বহুনির্বাচনী (MCQ)</option><option value="ko">ক — জ্ঞানমূলক</option><option value="kho">খ — অনুধাবনমূলক</option></select></label>
+      <button class="button button-primary practice-submit" type="submit" data-loading-label="প্রশ্ন তৈরি হচ্ছে…">প্রশ্ন তৈরি করো <span>→</span></button>
+    </form>
+    <div class="practice-loading" data-practice-loading role="status" aria-live="polite" hidden><span class="practice-loading-spinner" aria-hidden="true"></span><span data-practice-loading-text>Gemini topic অনুযায়ী প্রশ্ন ও উত্তর তৈরি করছে…</span><small>এতে কিছুটা সময় লাগতে পারে—অনুগ্রহ করে অপেক্ষা করো।</small></div>
+    <p class="practice-source-note">AI গুরুত্বপূর্ণ syllabus concept ও board-style pattern ধরে নতুন প্রশ্ন তৈরি করে; past question-এর হুবহু কপি নয়। AI-এর উত্তর ভুল হতে পারে—পরীক্ষার আগে textbook/teacher-এর সঙ্গে মিলিয়ে নাও।</p>
+  </section>
+
+  <section class="practice-current-section" aria-live="polite">
+    <div class="panel-heading"><div><span class="eyebrow">তোমার practice</span><h2>সর্বশেষ question set</h2></div></div>
+    <div class="practice-current" data-current-practice><p class="practice-empty">Question set তৈরি করলে এখানে দেখা যাবে।</p></div>
+  </section>
+
+  <section class="panel practice-history-panel">
+    <div class="panel-heading"><div><span class="eyebrow">SAVED PROGRESS</span><h2>দিন বা বিষয় অনুযায়ী আগের practice</h2><p class="muted">প্রশ্নে ✓ বা ✗ দিলে progress-ও save থাকবে।</p></div></div>
+    <form method="get" class="practice-filter">
+      <label><span>দিন</span><input type="date" name="date" value="{{ selected_date }}"></label>
+      <label><span>বিষয়</span><select name="subject"><option value="">সব বিষয়</option>{% for value, label in subjects %}<option value="{{ value }}"{% if selected_subject == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <button class="button button-light button-small" type="submit">দেখাও</button>
+      <a class="button button-light button-small" href="{% url 'student_study_planner' %}">সব history</a>
+    </form>
+    {% if date_error %}<p class="field-error">{{ date_error }}</p>{% endif %}
+    <div class="practice-history" data-practice-history>
+      {% for session in session_page %}{% include "portal/partials/topic_practice_session.html" with session=session expanded=False %}{% empty %}
+      <p class="practice-empty">এই filter-এ কোনো saved practice নেই।</p>
+      {% endfor %}
+    </div>
+    {% if session_page.paginator.num_pages > 1 %}<nav class="exam-pagination" aria-label="Practice history pages">
+      {% if session_page.has_previous %}<a class="button button-light button-small" href="?date={{ selected_date }}&subject={{ selected_subject }}&page={{ session_page.previous_page_number }}">আগের</a>{% endif %}
+      <span>{{ session_page.number }} / {{ session_page.paginator.num_pages }} পৃষ্ঠা</span>
+      {% if session_page.has_next %}<a class="button button-light button-small" href="?date={{ selected_date }}&subject={{ selected_subject }}&page={{ session_page.next_page_number }}">পরের</a>{% endif %}
+    </nav>{% endif %}
+  </section>
+</div>
+<script defer src="{% static 'js/topic-practice.js' %}?v=20261024-1"></script>
+{% endblock %}

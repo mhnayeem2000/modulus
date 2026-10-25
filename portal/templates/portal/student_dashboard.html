@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}আমার ড্যাশবোর্ড{% endblock %}
 {% block page_title %}আমার ড্যাশবোর্ড{% endblock %}
+{% block content_wrapper_class %}student-dashboard-content{% endblock %}
 {% block content %}
 <section class="welcome-banner student-welcome">
   <div><span class="eyebrow">শিক্ষার্থী পোর্টাল · {{ student.get_year_group_display }}</span><h1>স্বাগতম, {{ student.name }} 👋</h1><p>আগামীকালের ক্লাস আর এই সপ্তাহের পরীক্ষার প্রস্তুতি এক নজরে।</p></div>

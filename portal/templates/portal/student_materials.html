@@ -31,6 +31,13 @@
 </section>
 <section class="resource-tab-panel" id="resource-panel-pdf" role="tabpanel" aria-labelledby="resource-tab-pdf" data-resource-panel="pdf" {% if selected_kind != 'pdf' %}hidden{% endif %}>
   {% include "portal/partials/student_chapter_pdfs.html" %}
+  <aside class="student-book-reload">
+    <div><strong>বই বা PDF লোড না হলে</strong><p>ইন্টারনেট সংযোগ পরীক্ষা করে পৃষ্ঠাটি আবার লোড করুন।</p></div>
+    <form method="get" action="{% url 'student_materials' %}">
+      <input type="hidden" name="kind" value="pdf">
+      <button class="button button-light button-small" type="submit">পেজ রিলোড করুন</button>
+    </form>
+  </aside>
 </section>
-<script defer src="{% static 'js/student-resource-tabs.js' %}"></script>
+<script defer src="{% static 'js/student-resource-tabs.js' %}?v=20261016-2"></script>
 {% endblock %}

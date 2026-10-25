@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}AI Study Plan{% endblock %}
+{% block page_title %}AI Study Plan{% endblock %}
+{% block content_wrapper_class %}study-planner-page{% endblock %}
+{% block content %}
+<div data-planner-root>
+<section class="planner-hero">
+  <div>
+    <span class="eyebrow">AI STUDY PLANNER</span>
+    <h1>চাপ নয়, ছোট ছোট লক্ষ্য 🌱</h1>
+    <p>প্রতিদিন কত ঘণ্টা পড়বে, subject/chapter আর exam date ধরে AI এক সপ্তাহের plan বানাবে।</p>
+  </div>
+  <div class="planner-week-picker">
+    <a class="button button-light button-small" href="?week={{ previous_week|date:'Y-m-d' }}&tab={{ tab }}">←</a>
+    <span><strong>{{ week_start|date:"j M" }} – {{ week_end|date:"j M Y" }}</strong><small>এই সপ্তাহ</small></span>
+    <a class="button button-light button-small" href="?week={{ next_week|date:'Y-m-d' }}&tab={{ tab }}">→</a>
+  </div>
+</section>
+
+<nav class="planner-tabs" aria-label="Study planner">
+  <a class="{% if tab == 'plan' %}active{% endif %}" href="?week={{ week_start|date:'Y-m-d' }}&tab=plan">✦ সপ্তাহের Plan</a>
+  <a class="{% if tab == 'setup' %}active{% endif %}" href="?week={{ week_start|date:'Y-m-d' }}&tab=setup">⚙ আমার তথ্য</a>
+  <a class="{% if tab == 'questions' %}active{% endif %}" href="?week={{ week_start|date:'Y-m-d' }}&tab=questions">✎ CQ Practice</a>
+  <a class="{% if tab == 'history' %}active{% endif %}" href="?week={{ week_start|date:'Y-m-d' }}&tab=history">✓ অগ্রগতি</a>
+</nav>
+
+{% if messages %}
+  {% for message in messages %}<div class="planner-insight" role="status"><p>{{ message }}</p></div>{% endfor %}
+{% endif %}
+<div class="planner-ajax-feedback" data-planner-feedback role="status" hidden></div>
+
+{% if tab == 'plan' %}
+  {% if exam_date %}<section class="planner-insight"><span class="planner-insight-spark">⏳</span><div><strong>পরীক্ষা পর্যন্ত {{ exam_days_left }} দিন</strong><p>{{ exam_date|date:"j F Y" }} — প্রতিদিনের অল্প অল্প প্রস্তুতিই যথেষ্ট।</p></div></section>{% endif %}
+  {% if plan %}
+  <section class="planner-summary-grid">
+    <article class="planner-summary-card"><span>প্রতিদিনের পড়ার লক্ষ্য</span><strong>{{ daily_study_hours }}<small> ঘণ্টা</small></strong><small>তোমার সেট করা সময়</small></article>
+    <article class="planner-summary-card"><span>এই সপ্তাহের পরিকল্পনা</span><strong>{{ summary.planned_hours }}<small> ঘণ্টা</small></strong><small data-summary-pending>{{ summary.pending_count }}টি কাজ বাকি</small></article>
+    <article class="planner-summary-card"><span>কাজ সম্পন্ন</span><strong><span data-summary-completed>{{ summary.completed_count }}</span><small> / {{ summary.total_count }}</small></strong><small>শেষ করা session</small></article>
+    <article class="planner-summary-card"><span>সাপ্তাহিক অগ্রগতি</span><strong><span data-summary-percent>{{ summary.completion_percent }}</span><small>%</small></strong><div class="planner-progress-track"><i data-summary-progress style="width:{{ summary.completion_percent }}%"></i></div></article>
+  </section>
+  <section class="planner-insight"><span class="planner-insight-spark">✦</span><div><strong>প্ল্যান তৈরির তথ্য</strong><p>{{ generation_note }}</p></div></section>
+  {% if conflicts %}<section class="planner-conflicts" role="alert"><strong>সময় নিয়ে পরামর্শ</strong><ul>{% for conflict in conflicts %}<li>{{ conflict }}</li>{% endfor %}</ul></section>{% endif %}
+  {% endif %}
+
+  {% if selected_subjects and tab == 'plan' %}
+  <section class="panel planner-schedule-panel planner-chapter-overview">
+    <div class="panel-heading"><div><span class="eyebrow">তোমার বাছাই করা অধ্যায়</span><h2>কোন chapter পড়া হয়েছে, কোনটা বাকি</h2><p class="muted">শুধু তোমার বেছে রাখা chapter এখানে আছে; plan-এ অসম্পন্ন chapter-গুলোই আসবে।</p></div></div>
+    {% if chapter_progress_summary %}<div class="planner-chapter-subjects">
+      {% for subject_progress in chapter_progress_summary %}
+      <details class="planner-chapter-subject">
+        <summary>
+          <strong>{{ subject_progress.subject }}</strong>
+          <span><i class="chapter-count-done">{{ subject_progress.completed|length }}টি শেষ</i><i class="chapter-count-active">{{ subject_progress.in_progress|length }}টি চলছে</i><i class="chapter-count-pending">{{ subject_progress.not_started|length }}টি বাকি</i></span>
+        </summary>
+        <div class="planner-chapter-status-grid">
+          {% if subject_progress.completed %}<div><h3>পড়া হয়েছে <span>{{ subject_progress.completed|length }}</span></h3>
+            <ul>{% for item in subject_progress.completed %}<li class="planner-chapter-row"><div><strong>{{ item.chapter }}</strong> <small>{{ item.paper }}</small></div>{% if item.topics %}<details class="planner-topic-list"><summary>{{ item.topics|length }}টি topic</summary><ul>{% for topic in item.topics %}<li><span>{{ topic.topic }}</span><span class="planner-topic-status topic-{{ topic.status }}" data-topic-status data-subject="{{ subject_progress.subject }}" data-paper="{{ item.paper }}" data-chapter="{{ item.chapter }}" data-topic="{{ topic.topic }}">{{ topic.status_label }}</span></li>{% endfor %}</ul></details>{% endif %}</li>{% endfor %}</ul>
+          </div>
+          {% endif %}
+          {% if subject_progress.in_progress %}<div><h3>চলছে <span>{{ subject_progress.in_progress|length }}</span></h3>
+            <ul>{% for item in subject_progress.in_progress %}<li class="planner-chapter-row"><div><strong>{{ item.chapter }}</strong> <small>{{ item.paper }}</small></div>{% if item.topics %}<details class="planner-topic-list"><summary>{{ item.topics|length }}টি topic</summary><ul>{% for topic in item.topics %}<li><span>{{ topic.topic }}</span><span class="planner-topic-status topic-{{ topic.status }}" data-topic-status data-subject="{{ subject_progress.subject }}" data-paper="{{ item.paper }}" data-chapter="{{ item.chapter }}" data-topic="{{ topic.topic }}">{{ topic.status_label }}</span></li>{% endfor %}</ul></details>{% endif %}</li>{% endfor %}</ul>
+          </div>
+          {% endif %}
+          {% if subject_progress.not_started %}<div><h3>এখনো শুরু হয়নি <span>{{ subject_progress.not_started|length }}</span></h3>
+            <ul>{% for item in subject_progress.not_started %}<li class="planner-chapter-row"><div><strong>{{ item.chapter }}</strong> <small>{{ item.paper }}</small></div>{% if item.topics %}<details class="planner-topic-list"><summary>{{ item.topics|length }}টি topic</summary><ul>{% for topic in item.topics %}<li><span>{{ topic.topic }}</span><span class="planner-topic-status topic-{{ topic.status }}" data-topic-status data-subject="{{ subject_progress.subject }}" data-paper="{{ item.paper }}" data-chapter="{{ item.chapter }}" data-topic="{{ topic.topic }}">{{ topic.status_label }}</span></li>{% endfor %}</ul></details>{% endif %}</li>{% endfor %}</ul>
+          </div>
+          {% endif %}
+        </div>
+      </details>
+      {% endfor %}
+    </div>{% else %}<p class="planner-chapter-empty">এখনো কোনো chapter বেছে রাখোনি। আমার তথ্য ট্যাবে গিয়ে পরীক্ষার chapter যোগ করো।</p>{% endif %}
+  </section>
+  {% endif %}
+
+  <section class="panel planner-schedule-panel">
+    <div class="panel-heading"><div><span class="eyebrow">7-DAY PLAN</span><h2>প্রতিদিনের পড়া</h2><p class="muted">প্রতিটি session-এর সময় ও বিরতি plan-এ রাখা হয়েছে।</p></div></div>
+    {% if plan %}
+      <nav class="planner-calendar" aria-label="এই সপ্তাহের ক্যালেন্ডার">
+        <a class="planner-calendar-day{% if not selected_day %} active{% endif %}" href="?week={{ week_start|date:'Y-m-d' }}&tab=plan">
+          <span>সব দিন</span><strong>৭</strong><small>দিন</small>
+        </a>
+        {% for day in tasks_by_day %}
+        <a class="planner-calendar-day{% if selected_day == day.date %} active{% endif %}" href="?week={{ week_start|date:'Y-m-d' }}&tab=plan&day={{ day.date|date:'Y-m-d' }}">
+          <span>{{ day.date|date:"D" }}</span><strong>{{ day.date|date:"j" }}</strong><small>{{ day.tasks|length }}টি কাজ</small>
+        </a>
+        {% endfor %}
+      </nav>
+      <div class="planner-day-list">
+        {% for day in tasks_by_day %}
+        {% if not selected_day or selected_day == day.date %}
+        <article class="planner-day">
+          <header class="planner-day-heading">
+            <div class="planner-day-date"><span>{{ day.date|date:"D" }}</span><strong>{{ day.date|date:"j" }}</strong></div>
+            <div class="planner-day-meta"><strong>{{ day.date|date:"l, j F" }}{% if day.date == today %} · আজ{% endif %}</strong><span data-day-completion>{{ day.minutes }} মিনিট · {{ day.completed }}/{{ day.tasks|length }} সম্পন্ন</span></div>
+            <div class="planner-day-progress"><strong>{{ day.percent }}%</strong><span>দিনের অগ্রগতি</span><i><b style="width:{{ day.percent }}%"></b></i></div>
+          </header>
+          {% if day.tasks %}
+          <div class="planner-task-list">
+            {% for task in day.tasks %}
+            <article class="planner-task-card{% if task.status == 'completed' %} is-completed{% endif %}">
+              <span class="planner-subject-mark">{{ task.subject|slice:":1" }}</span>
+              <div class="planner-task-content">
+                <div class="planner-task-tags"><span class="planner-source source-{{ task.source }}">{% if task.source == 'teacher' %}শিক্ষকের দেওয়া{% else %}AI Plan{% endif %}</span><span class="planner-task-type">{{ task.get_task_type_display }}</span><span class="planner-priority priority-{{ task.priority }}">{{ task.get_priority_display }}</span></div>
+                <h3>{{ task.subject }}{% if task.paper %} · {{ task.paper }}{% endif %}</h3>
+                <p class="planner-task-chapter">{{ task.chapter }}{% if task.topic %} · {{ task.topic }}{% endif %}</p>
+                <details class="planner-task-more">
+                  <summary>Session details</summary>
+                  <p class="planner-task-description">{{ task.description }}</p>
+                  {% if task.expected_outcome %}<small class="planner-outcome">{{ task.expected_outcome }}</small>{% endif %}
+                  {% if task.recommendation_reason %}<small class="planner-reason">{{ task.recommendation_reason }}</small>{% endif %}
+                </details>
+                <div class="planner-task-time"><strong>{{ task.start_time|time:"g:i A" }}–{{ task.end_time|time:"g:i A" }}</strong><span>{{ task.duration_minutes }} মিনিট</span></div>
+              </div>
+              <div class="planner-task-actions">
+                {% if task.status == 'completed' %}<span class="planner-complete-check">✓ শেষ</span>
+                {% else %}<form method="post" action="{% url 'legacy_student_study_planner' %}">{% csrf_token %}<input type="hidden" name="task_id" value="{{ task.pk }}"><input type="hidden" name="task_action" value="complete"><button class="button button-primary button-small" type="submit">পড়া শেষ ✓</button></form>{% endif %}
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}<div class="planner-day-empty">এই দিনে routine ও ফাঁকা সময় অনুযায়ী কোনো session রাখা যায়নি।</div>{% endif %}
+        </article>
+        {% endif %}
+        {% endfor %}
+      </div>
+      <details class="planner-regenerate">
+        <summary>এই সপ্তাহের plan আবার সাজাও</summary>
+        <p>শেষ করা কাজ ও আগের progress মুছে যাবে না।</p>
+        <form method="post" action="{% url 'generate_student_study_plan' %}" class="planner-generate-form" data-loading-state>
+          {% csrf_token %}<input type="hidden" name="week" value="{{ week_start|date:'Y-m-d' }}">
+          {% if summary.pending_count %}<label><input type="checkbox" name="confirm_replace" required> বাকি কাজগুলো নতুন করে সাজাতে চাই</label>{% endif %}
+          <button class="button button-light button-small" type="submit" data-loading-label="Plan তৈরি হচ্ছে…">Plan আবার তৈরি করো</button>
+        </form>
+      </details>
+    {% else %}
+      <div class="planner-empty"><span class="planner-empty-icon">✦</span><h3>তোমার এক সপ্তাহের plan তৈরি করি</h3><p>প্রতিদিনের পড়ার ঘণ্টা, subject, chapter আর exam date একবার জানাও। বাকিটা AI সাজিয়ে দেবে।</p><a class="button button-primary" href="?tab=setup">আমার তথ্য দাও →</a></div>
+    {% endif %}
+    {% if not plan %}<form method="post" action="{% url 'generate_student_study_plan' %}" class="planner-generate-form planner-first-generate" data-loading-state>{% csrf_token %}<input type="hidden" name="week" value="{{ week_start|date:'Y-m-d' }}"><button class="button button-primary" type="submit" data-loading-label="AI plan তৈরি হচ্ছে…">✨ AI দিয়ে ১ সপ্তাহের plan তৈরি করো</button></form>{% endif %}
+  </section>
+{% elif tab == 'setup' %}
+  <section class="panel planner-schedule-panel">
+    <div class="panel-heading"><div><span class="eyebrow">একবার তথ্য দাও, plan আপডেট করতে পারবে</span><h2>তোমার পড়ার তথ্য</h2><p class="muted">প্রতিদিনের রুটিন ও সন্ধ্যার free time, কত ঘণ্টা পড়বে, কোন subject/chapter পড়বে—সব AI-কে জানাও।</p></div></div>
+    <form method="post" action="{% url 'save_study_planner_setup' %}" class="planner-setup-form" data-planner-setup novalidate>
+      {% csrf_token %}
+      <div class="planner-field"><label for="{{ preference_form.preferred_study_hours.id_for_label }}">{{ preference_form.preferred_study_hours.label }}</label>{{ preference_form.preferred_study_hours }}{% if preference_form.preferred_study_hours.errors %}<span class="field-error">{{ preference_form.preferred_study_hours.errors.0 }}</span>{% endif %}<small class="planner-field-hint">যেমন ৫ বা ৬ ঘণ্টা। এই সময়ের মধ্যে AI সপ্তাহের পড়া ভাগ করে দেবে।</small></div>
+      <div class="planner-field"><label for="{{ preference_form.exam_date.id_for_label }}">পরের পরীক্ষার তারিখ</label>{{ preference_form.exam_date }}<small class="planner-field-hint">জানা থাকলে দাও; না থাকলে খালি রাখতে পারো।</small>{% if preference_form.exam_date.errors %}<span class="field-error">{{ preference_form.exam_date.errors.0 }}</span>{% endif %}</div>
+      <div class="planner-choice-group"><strong>কোন কোন subject পড়বে?</strong><div class="planner-choice-grid">{% for choice in preference_form.subjects %}<label>{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>{% endfor %}</div>{% if preference_form.subjects.errors %}<span class="field-error">{{ preference_form.subjects.errors.0 }}</span>{% endif %}</div>
+
+      <section class="planner-setup-section planner-routine-editor">
+        <h3>প্রতিদিনের রুটিন ও পড়ার সময়</h3>
+        <p class="muted">সপ্তাহের প্রতিদিনের ফাঁকা সময় default হিসেবে সন্ধ্যা ৭টা–১১টা রাখা হয়েছে। কলেজ বা coaching-এর সময় “ব্যস্ত” বেছে নাও—AI সেই সময় বাদ দিয়ে পড়া সাজাবে। নিজের routine অনুযায়ী সময় বদলে নাও।</p>
+        {{ interval_formset.management_form }}
+        {% if interval_formset.non_form_errors %}<div class="planner-form-errors">{{ interval_formset.non_form_errors }}</div>{% endif %}
+        <div class="planner-formset" data-formset="intervals">
+          {% for form in interval_formset %}<div class="planner-form-row" data-form-row>{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}<div class="planner-form-fields">{% for field in form.visible_fields %}{% if field.name != 'DELETE' %}<div class="planner-field"><label>{{ field.label }}</label>{{ field }}{% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}</div>{% endif %}{% endfor %}<label class="planner-delete-row">{{ form.DELETE }}সময় মুছুন</label></div></div>{% endfor %}
+        </div>
+        <template data-empty-row="intervals"><div class="planner-form-row" data-form-row>{% for hidden in interval_formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}<div class="planner-form-fields">{% for field in interval_formset.empty_form.visible_fields %}{% if field.name != 'DELETE' %}<div class="planner-field"><label>{{ field.label }}</label>{{ field }}</div>{% endif %}{% endfor %}<label class="planner-delete-row">{{ interval_formset.empty_form.DELETE }}সময় মুছুন</label></div></div></template>
+        <button class="button button-light button-small planner-add-row" type="button" data-add-row="intervals">＋ Routine-এ সময় যোগ করো</button>
+      </section>
+
+      <div class="planner-setup-section"><h3>যে chapter পড়বে</h3><p class="muted">Subject, paper এবং chapter বেছে নাও। Topic জানা থাকলে লিখো—না জানলে AI topic খুঁজে সাজাবে।</p>
+        {{ chapter_formset.management_form }}
+        {% if chapter_formset.non_form_errors %}<div class="planner-form-errors">{{ chapter_formset.non_form_errors }}</div>{% endif %}
+        <div class="planner-formset" data-formset="chapters">
+          {% for form in chapter_formset %}<div class="planner-form-row" data-form-row>{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}<div class="planner-form-fields">{% for field in form.visible_fields %}{% if field.name != 'DELETE' %}<div class="planner-field"><label>{{ field.label }}</label>{{ field }}{% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}</div>{% endif %}{% endfor %}<label class="planner-delete-row">{{ form.DELETE }}chapter মুছুন</label></div></div>{% endfor %}
+        </div>
+        <template data-empty-row="chapters"><div class="planner-form-row" data-form-row>{% for hidden in chapter_formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}<div class="planner-form-fields">{% for field in chapter_formset.empty_form.visible_fields %}{% if field.name != 'DELETE' %}<div class="planner-field"><label>{{ field.label }}</label>{{ field }}</div>{% endif %}{% endfor %}<label class="planner-delete-row">{{ chapter_formset.empty_form.DELETE }}chapter মুছুন</label></div></div></template>
+        <button class="button button-light button-small planner-add-row" type="button" data-add-row="chapters">＋ Chapter যোগ করো</button>
+      </div>
+      <div class="planner-step-actions"><button class="button button-primary" type="submit" data-loading-label="তথ্য সংরক্ষণ হচ্ছে…">তথ্য save করো ✓</button><a class="button button-light" href="?tab=plan">ফিরে যাও</a></div>
+    </form>
+  </section>
+{% elif tab == 'questions' %}
+  <section class="panel planner-schedule-panel"><div class="panel-heading"><div><span class="eyebrow">AI GENERATED · TEXT ONLY</span><h2>Topic ও CQ Practice</h2><p class="muted">প্রতিটি topic-এ পাঁচটি practice question। একবারে একটি topic পড়ো।</p></div></div>
+    {% if question_page and question_page.object_list %}
+      {% for topic in question_page.object_list %}<article class="planner-assignment-card"><span class="planner-source source-ai">{{ topic.subject }}{% if topic.paper %} · {{ topic.paper }}{% endif %}</span><h3>{{ topic.chapter }} — {{ topic.topic }}</h3><ol class="planner-question-list">{% for question in topic.questions %}<li>{{ question|linebreaksbr }}</li>{% endfor %}</ol></article>{% endfor %}
+      <nav class="planner-pagination" aria-label="CQ topics pagination">{% if question_page.has_previous %}<a class="button button-light button-small" href="?tab=questions&page={{ question_page.previous_page_number }}">← আগের topic</a>{% endif %}<span>{{ question_page.number }} / {{ question_page.paginator.num_pages }}</span>{% if question_page.has_next %}<a class="button button-primary button-small" href="?tab=questions&page={{ question_page.next_page_number }}">পরের topic →</a>{% endif %}</nav>
+    {% else %}<div class="planner-empty"><h3>এখনো CQ তৈরি হয়নি</h3><p>প্রথমে আমার তথ্য save করে AI plan তৈরি করো।</p><a class="button button-primary" href="?tab=setup">তথ্য সেট করো</a></div>{% endif %}
+  </section>
+{% elif tab == 'history' %}
+  <section class="panel planner-schedule-panel"><div class="panel-heading"><div><span class="eyebrow">তোমার অগ্রগতি</span><h2>আগের সপ্তাহ</h2><p class="muted">শেষ করা কাজ ও বাকি chapter-গুলো এখানে মনে রাখা হয়।</p></div></div>
+    {% if history_plans %}<div class="planner-day-list">{% for old_plan in history_plans %}<article class="planner-day"><h3>{{ old_plan.week_start|date:"j M Y" }}</h3><p>{{ old_plan.summary.completed_count }}টি শেষ · {{ old_plan.summary.pending_count }}টি বাকি · {{ old_plan.summary.planned_hours }} ঘণ্টা পড়া</p></article>{% endfor %}</div>{% else %}<div class="planner-empty"><p>প্রথম weekly plan শেষ হলে অগ্রগতি এখানে দেখা যাবে।</p></div>{% endif %}
+  </section>
+{% endif %}
+  </div>
+  <script defer src="{% static 'js/study-planner.js' %}?v=20261023-7"></script>
+{% endblock %}

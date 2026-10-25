@@ -1,12 +1,44 @@
 from django.urls import path
 
 from . import views
+from . import study_planner_views
+from . import topic_practice_views
 
 urlpatterns = [
     path('install-app/', views.install_app, name='install_app'),
     path('account/profile/', views.account_profile, name='account_profile'),
     path('account/password/', views.account_password, name='account_password'),
     path('student/', views.student_dashboard, name='student_dashboard'),
+    path('student/study-planner/', topic_practice_views.student_topic_practice, name='student_study_planner'),
+    path(
+        'student/study-planner/legacy/',
+        study_planner_views.legacy_student_study_planner,
+        name='legacy_student_study_planner',
+    ),
+    path(
+        'student/study-practice/generate/',
+        topic_practice_views.create_topic_practice,
+        name='create_topic_practice',
+    ),
+    path(
+        'student/study-practice/recommendations/',
+        topic_practice_views.recommend_chapter_topics,
+        name='recommend_chapter_topics',
+    ),
+    path(
+        'student/study-practice/<int:session_id>/load-more/',
+        topic_practice_views.load_more_topic_practice,
+        name='load_more_topic_practice',
+    ),
+    path(
+        'student/study-practice/questions/<int:question_id>/status/',
+        topic_practice_views.update_topic_practice_status,
+        name='update_topic_practice_status',
+    ),
+    path('student/study-planner/setup/', study_planner_views.save_study_planner_setup, name='save_study_planner_setup'),
+    path('student/study-planner/generate/', study_planner_views.generate_student_study_plan, name='generate_student_study_plan'),
+    path('student/study-planner/tasks/<int:task_id>/', study_planner_views.update_study_plan_task, name='update_study_plan_task'),
+    path('teacher/study-assignments/', study_planner_views.teacher_study_assignments, name='teacher_study_assignments'),
     path(
         'student/classes/<int:session_id>/progress/',
         views.update_class_session_progress,

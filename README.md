@@ -26,6 +26,9 @@ Modulus Edu is a Django-based coaching management application with role-based ac
 - Track academic progress and subject-wise performance.
 - Access class sheets, books, and educational resources.
 - Submit feedback to the administration.
+- Create original AI-generated CQ and MCQ practice for a selected subject, paper, chapter, and topic.
+- Get separate AI-prioritized topic lists for CQ and MCQ preparation from a selected chapter.
+- Save practice sets and track questions as practiced or needing help.
 
 ### 4. Class and Academic Management
 - Organize students by HSC first-year and second-year batches.
@@ -59,7 +62,7 @@ Modulus Edu is a Django-based coaching management application with role-based ac
 - **Backend:** Python, Django
 - **Database:** SQLite or MySQL
 - **Frontend:** HTML, CSS, JavaScript, and Tailwind CSS
-- **Integrations:** WhatsApp Cloud API, BulkSMSBD
+- **Integrations:** Gemini API, OpenAI (legacy planner), WhatsApp Cloud API, BulkSMSBD
 - **Deployment:** cPanel with Python Passenger
 
 ## Getting Started
@@ -112,8 +115,22 @@ Configure the required environment variables for your environment, including:
 - Database connection settings
 - WhatsApp Cloud API access token and phone number ID
 - BulkSMSBD API key and sender ID
+- Gemini API key for original AI-generated topic practice questions
+- OpenAI API key for the archived weekly planner, if you continue using it
 
 Keep credentials out of source control. The `.env` file should remain excluded through `.gitignore`. For production, use securely configured hosting environment variables or an appropriately protected configuration file.
+
+## AI Topic Practice
+
+Apply the topic practice database changes with:
+
+```powershell
+python manage.py migrate
+```
+
+The topic practice feature reads `GEMINI_API_KEY` and `GEMINI_MODEL` (default `gemini-2.5-flash`) to generate original CQ, MCQ, knowledge (ক), and understanding (খ) practice through the Gemini API. No web search is used. Students select the subject, paper, chapter, topic, and question type. Practice sets and each question's progress are saved. A separate chapter guide returns only prioritized topic names for CQ and MCQ; it does not generate questions.
+
+Generated questions are original practice content based on the student's selected subject, paper, chapter, and topic; the feature does not perform web search and cannot guarantee that answers are error-free. Check generated answers against textbooks or a teacher. The chapter guide prioritizes topics using syllabus context and common exam patterns; it is not a verified frequency analysis of a specific past-paper dataset and does not claim that any topic appeared in a specific exam. The practice feature does not reproduce past board questions verbatim. Missing Gemini credentials and provider failures are shown to the student; there is no rule-based question fallback. The former weekly planner and its saved records remain archived at `/student/study-planner/legacy/` and are not deleted. Never put provider credentials in frontend code or commit `.env`.
 
 ## WhatsApp Configuration
 
@@ -150,4 +167,3 @@ Run the project's automated tests with:
 ```powershell
 python manage.py test students attendance exams portal
 ```
-

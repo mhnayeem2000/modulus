@@ -1,3 +1,6 @@
+from urllib.parse import urlsplit
+
+
 STUDENT_BOOK_SECTIONS = [
     {
         'title': 'উদ্ভিদবিজ্ঞান',
@@ -103,3 +106,19 @@ STUDENT_BOOK_SECTIONS = [
         ],
     },
 ]
+
+
+def mobile_pdf_download_url(view_url):
+    if not view_url:
+        return view_url
+    parsed_url = urlsplit(view_url)
+    path_parts = parsed_url.path.strip('/').split('/')
+    if (
+        parsed_url.scheme == 'https'
+        and parsed_url.netloc == 'drive.google.com'
+        and len(path_parts) == 4
+        and path_parts[:2] == ['file', 'd']
+        and path_parts[3] == 'view'
+    ):
+        return f'https://drive.google.com/uc?export=download&id={path_parts[2]}'
+    return view_url

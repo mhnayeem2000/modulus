@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Study Assignments · Modulus Edu{% endblock %}
+{% block page_title %}Study Assignments{% endblock %}
+{% block content_wrapper_class %}study-planner-page{% endblock %}
+{% block content %}
+<section class="planner-hero">
+  <div><span class="eyebrow">TEACHER WORKSPACE · STUDY TASKS</span><h1>পড়ার কাজ assign করো 📚</h1><p>তোমার assignment শিক্ষার্থীর AI weekly plan-এ Teacher Assigned হিসেবে যুক্ত হবে।</p></div>
+  <a class="button button-light" href="{% url 'teacher_dashboard' %}">← Dashboard</a>
+</section>
+<section class="planner-teacher-layout">
+  <article class="panel planner-teacher-form-panel">
+    <div class="panel-heading"><div><span class="eyebrow">NEW ASSIGNMENT</span><h2>শিক্ষার্থী বা ব্যাচ বেছে নাও</h2><p class="muted">Mandatory কাজের priority ও deadline শিক্ষার্থীর পরিকল্পনায় আগে বিবেচিত হবে।</p></div></div>
+    <form method="post" class="stacked-form planner-teacher-form" data-loading-state>
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="field-group{% if field.name == 'student' or field.name == 'year_group' or field.name == 'class_name' %} assignment-target-field assignment-target-{{ field.name }}{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+        {% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}
+        {% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}
+      </div>
+      {% endfor %}
+      <button class="button button-primary button-full" type="submit" data-loading-label="Assign হচ্ছে…">Assign Study Task <span>→</span></button>
+    </form>
+  </article>
+  <section class="panel planner-teacher-assignment-panel">
+    <div class="panel-heading"><div><span class="eyebrow">YOUR ASSIGNMENTS</span><h2>Assignment &amp; completion status</h2><p class="muted">শুধু তোমার বরাদ্দ করা শিক্ষার্থীদের submission status।</p></div><span class="intro-count">{{ assignments|length }}টি</span></div>
+    {% if assignments %}
+    <div class="planner-teacher-list">
+      {% for assignment in assignments %}
+      <article class="planner-teacher-assignment">
+        <div class="planner-assignment-heading"><span class="planner-source source-teacher">Teacher Assigned</span><span class="planner-priority priority-{{ assignment.priority }}">{{ assignment.get_priority_display }}</span></div>
+        <h3>{{ assignment.subject }}{% if assignment.paper %} · {{ assignment.paper }}{% endif %}</h3>
+        <p>{{ assignment.description }}</p>
+        <div class="planner-assignment-meta"><span>{% if assignment.student %}{{ assignment.student.name }}{% else %}{{ assignment.get_year_group_display }} · {{ assignment.class_name }}{% endif %}</span><strong>Due {{ assignment.deadline|date:"j M Y" }}</strong><span>{{ assignment.estimated_duration_minutes }} min</span></div>
+        <details class="planner-completion-details"><summary>শিক্ষার্থীর অবস্থা ({{ assignment.completion_rows|length }})</summary>
+          {% if assignment.completion_rows %}<ul>{% for row in assignment.completion_rows %}
+            <li><span>{{ row.student.name }}</span>{% if row.progress.is_completed %}<strong class="planner-complete-check">Completed</strong>{% elif row.progress.reschedule_requested %}<strong class="planner-reschedule-status">Reschedule requested</strong>{% else %}<span class="planner-pending-status">Pending</span>{% endif %}</li>
+          {% endfor %}</ul>{% else %}<p class="muted">এই ব্যাচে বর্তমানে কোনো সক্রিয় শিক্ষার্থী নেই।</p>{% endif %}
+        </details>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}<div class="planner-empty"><span class="planner-empty-icon">▤</span><h3>এখনো কোনো assignment নেই</h3><p>উপরের form থেকে প্রথম study task বরাদ্দ করো।</p></div>{% endif %}
+  </section>
+</section>
+<script defer src="{% static 'js/study-planner.js' %}"></script>
+{% endblock %}

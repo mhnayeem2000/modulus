@@ -132,6 +132,8 @@ class StudentPortalTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'আগামীকালের প্রস্তুতি')
+        self.assertContains(response, 'class="page-content student-dashboard-content"')
+        self.assertContains(response, 'আজকের ক্লাসের পড়া')
         self.assertNotContains(response, 'এই মাসে উপস্থিতি')
         self.assertContains(response, 'পদার্থবিজ্ঞান')
         self.assertContains(response, 'উপস্থিতির ক্যালেন্ডার')
@@ -171,10 +173,16 @@ class StudentPortalTests(TestCase):
         self.assertContains(response, 'data-resource-tab="pdf"')
         self.assertContains(response, 'data-resource-panel="sheet" hidden')
         self.assertContains(response, 'data-resource-panel="pdf"')
+        self.assertContains(response, 'বই বা PDF লোড না হলে')
+        self.assertContains(response, 'পেজ রিলোড করুন')
         self.assertTemplateUsed(response, 'portal/student_materials.html')
         self.assertContains(
             response,
             'https://drive.google.com/file/d/1vR3JzTvJAvj7rwSiqzmPQEpUHxsqfeel/view',
+        )
+        self.assertContains(
+            response,
+            'data-mobile-download-url="https://drive.google.com/uc?export=download&amp;id=1vR3JzTvJAvj7rwSiqzmPQEpUHxsqfeel"',
         )
         self.assertContains(response, 'PDF লিংক শিগগিরই যোগ হবে')
 
@@ -1007,19 +1015,30 @@ class TeacherAndSuperAdminPortalTests(TestCase):
         response = self.client.get(reverse('class_management'))
 
         self.assertContains(response, '১ম ক্লাস')
-        self.assertContains(response, '২য় ক্লাস')
         self.assertContains(response, 'নিজের রসায়ন ক্লাস')
         self.assertNotContains(response, 'অন্য শিক্ষকের ক্লাস')
+        self.assertContains(response, 'শনিবার')
+        self.assertContains(response, 'রবিবার')
+        self.assertContains(response, 'শুক্রবার')
+        self.assertContains(response, 'weekly-routine-scroll')
         own_day = next(
             row for row in response.context['weekday_rows']
             if row['weekday'] == own_routine.weekday
         )
         self.assertEqual(own_day['first_class'], own_routine)
+        self.assertEqual(own_day['classes'], [own_routine])
         self.assertTrue(all(
-            row['first_class'] is None and not row['later_classes']
+            row['first_class'] is None and not row['later_classes'] and not row['classes']
             for row in response.context['weekday_rows']
             if row['weekday'] != own_routine.weekday
         ))
+        self.assertEqual(len(response.context['weekday_rows']), 7)
+        content = response.content.decode()
+        day_positions = [
+            content.index(f'data-weekday="{weekday}"')
+            for weekday in (5, 6, 0, 1, 2, 3, 4)
+        ]
+        self.assertEqual(day_positions, sorted(day_positions))
 
     def test_superadmin_can_edit_and_delete_routine(self):
         routine = Routine.objects.create(
@@ -1096,6 +1115,53 @@ class TeacherAndSuperAdminPortalTests(TestCase):
         self.assertContains(response, 'অতিরিক্ত ক্লাস')
         self.assertContains(response, '5টি ক্লাস')
         self.assertContains(response, '3টি ক্লাস')
+        self.assertContains(response, 'সোমবার থেকে রবিবার')
+        self.assertContains(response, 'routine-admin-week-scroll')
+        self.assertEqual(
+            [day['weekday'] for day in year_groups[0]['days']],
+            [
+                Routine.Weekday.MONDAY,
+                Routine.Weekday.TUESDAY,
+                Routine.Weekday.WEDNESDAY,
+                Routine.Weekday.THURSDAY,
+                Routine.Weekday.FRIDAY,
+                Routine.Weekday.SATURDAY,
+                Routine.Weekday.SUNDAY,
+            ],
+        )
+
+    def test_superadmin_routine_includes_weekend_at_end_of_horizontal_week(self):
+        saturday = Routine.objects.create(
+            teacher=self.teacher,
+            class_name='HSC 1st Year',
+            year_group=Routine.YearGroup.FIRST,
+            weekday=Routine.Weekday.SATURDAY,
+            start_time=time(9),
+            end_time=time(10),
+            subject='শনিবারের ক্লাস',
+        )
+        sunday = Routine.objects.create(
+            teacher=self.teacher,
+            class_name='HSC 1st Year',
+            year_group=Routine.YearGroup.FIRST,
+            weekday=Routine.Weekday.SUNDAY,
+            start_time=time(10),
+            end_time=time(11),
+            subject='রবিবারের ক্লাস',
+        )
+        self.client.force_login(self.superadmin)
+
+        response = self.client.get(reverse('class_management'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, saturday.subject)
+        self.assertContains(response, sunday.subject)
+        content = response.content.decode()
+        day_positions = [
+            content.index(f'data-weekday="{weekday}"')
+            for weekday in range(7)
+        ]
+        self.assertEqual(day_positions, sorted(day_positions))
 
     def test_legacy_routine_without_year_defaults_to_first_year(self):
         routine = Routine.objects.create(

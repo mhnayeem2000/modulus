@@ -1,0 +1,31 @@
+<details class="practice-session"{% if expanded %} open{% endif %} data-practice-session data-session-id="{{ session.pk }}">
+  <summary class="practice-session-summary">
+    <span><strong>{{ session.topic }}</strong><small>{{ session.subject }} · {{ session.paper }} · {{ session.chapter }}</small></span>
+    <span class="practice-session-meta"><i>{{ session.get_question_type_display }}</i><i data-question-count>{{ session.questions.count }}টি প্রশ্ন</i><small>{{ session.created_at|date:"j M Y, g:i A" }}</small></span>
+  </summary>
+  <div class="practice-session-body">
+    {% if session.sources %}
+    <details class="practice-sources"><summary>Topic reference ({{ session.sources|length }})</summary>
+      <ul>{% for source in session.sources %}<li><a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.title }}</a></li>{% endfor %}</ul>
+    </details>
+    {% else %}<p class="practice-no-sources">প্রশ্নগুলো নির্বাচিত subject, paper, chapter ও topic ধরে AI-কে দিয়ে তৈরি original practice; এগুলো past board question নয়।</p>{% endif %}
+    <div class="practice-question-scroll" data-question-scroll>
+      {% for question in session.questions.all %}
+      <article class="practice-question{% if question.status == 'practiced' %} is-practiced{% elif question.status == 'needs_help' %} needs-help{% endif %}" data-practice-question>
+        <header><span class="practice-question-number">{{ forloop.counter }}</span><div><strong>{{ question.prompt|linebreaksbr }}</strong></div></header>
+        {% if question.choices %}<ol class="practice-mcq-choices" type="A">{% for choice in question.choices %}<li>{{ choice }}</li>{% endfor %}</ol>{% endif %}
+        <details class="practice-answer"><summary>উত্তর ও ব্যাখ্যা দেখো</summary><p><strong>উত্তর:</strong> {{ question.answer|linebreaksbr }}</p>{% if question.explanation %}<p><strong>ব্যাখ্যা:</strong> {{ question.explanation|linebreaksbr }}</p>{% endif %}</details>
+        <div class="practice-question-actions" data-status-url="{% url 'update_topic_practice_status' question.pk %}">
+          <button type="button" class="practice-status-button{% if question.status == 'practiced' %} active{% endif %}" data-question-status="practiced" aria-pressed="{% if question.status == 'practiced' %}true{% else %}false{% endif %}">✓ পড়েছি</button>
+          <button type="button" class="practice-status-button status-problem{% if question.status == 'needs_help' %} active{% endif %}" data-question-status="needs_help" aria-pressed="{% if question.status == 'needs_help' %}true{% else %}false{% endif %}">✗ সমস্যা</button>
+          <button type="button" class="practice-status-button status-reset" data-question-status="unmarked" aria-pressed="{% if question.status == 'unmarked' %}true{% else %}false{% endif %}">↺ mark সরাও</button>
+          <span class="practice-status-label" data-status-label>{{ question.get_status_display }}</span>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    <button type="button" class="button button-light practice-load-more" data-load-more-url="{% url 'load_more_topic_practice' session.pk %}">
+      আরও {{ batch_count }}টি {% if session.question_type == 'mcq' %}MCQ{% elif session.question_type == 'ko' %}ক (জ্ঞান){% elif session.question_type == 'kho' %}খ (অনুধাবন){% else %}CQ{% endif %} আনো
+    </button>
+  </div>
+</details>

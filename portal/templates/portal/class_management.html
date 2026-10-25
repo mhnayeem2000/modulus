@@ -32,9 +32,11 @@
           <div><span class="routine-year-kicker">ব্যাচভিত্তিক সাপ্তাহিক সময়সূচি</span><h3>{{ year_group.label }}</h3></div>
           <span class="routine-class-total">{{ year_group.class_count }}টি ক্লাস</span>
         </header>
+        <p class="routine-scroll-hint">সোমবার থেকে রবিবার পর্যন্ত সব দিনের রুটিন দেখতে ডানে-বামে scroll করুন</p>
+        <div class="routine-admin-week-scroll" tabindex="0" aria-label="সোমবার থেকে রবিবারের সাপ্তাহিক রুটিন; ডানে-বামে scroll করুন">
         <div class="routine-day-grid">
           {% for day in year_group.days %}
-          <article class="routine-day-card">
+          <article class="routine-day-card" data-weekday="{{ day.weekday }}">
             <header class="routine-day-heading">
               <h4>{{ day.label }}</h4>
               <span>{{ day.classes|length }}টি</span>
@@ -66,6 +68,7 @@
           </article>
           {% endfor %}
         </div>
+        </div>
       </section>
       {% empty %}
       <div class="empty-state compact-empty"><span>◷</span><strong>এখনো রুটিন যোগ হয়নি</strong><p>রুটিনে ক্লাস যোগ করলে ১ম বা ২য় বর্ষের কার্ডে দেখা যাবে।</p></div>
@@ -73,42 +76,29 @@
     </div>
     </div>
     {% else %}
+    <p class="routine-scroll-hint">শনিবার থেকে শুক্রবার পর্যন্ত সব দিনের রুটিন দেখতে ডানে-বামে scroll করুন</p>
+    <div class="weekly-routine-scroll" tabindex="0" aria-label="সাপ্তাহিক রুটিন; ডানে-বামে scroll করুন">
     <div class="weekly-routine-grid">
-      <div class="weekly-routine-header"><span>বার</span><span>১ম ক্লাস</span><span>২য় ক্লাস</span></div>
       {% for day in weekday_rows %}
-      <div class="weekly-routine-row">
-        <div class="weekly-routine-day"><span class="weekly-day-mark">{{ forloop.counter|stringformat:"02d" }}</span><strong>{{ day.label }}</strong></div>
-        {% for slot in "12" %}
-          <div class="weekly-routine-slot">
-          {% if forloop.first %}
-            {% if day.first_class and is_superadmin or day.first_class and day.first_class.teacher_id == request.user.id %}
-              {% with routine=day.first_class %}
-              {% if routine.is_revision %}<span class="routine-revision-badge">রিভিশন ক্লাস</span>{% endif %}
-              <strong>{{ routine.get_year_group_display }} · {{ routine.subject }}{% if routine.paper %} · {{ routine.paper }}{% endif %}</strong>
-              <span>{% if is_superadmin %}{{ routine.teacher.get_full_name|default:routine.teacher.username }} · {% endif %}{{ routine.chapter|default:"অধ্যায় যোগ হয়নি" }}</span>
-              <small>{{ routine.start_time|time:"g:i A" }}–{{ routine.end_time|time:"g:i A" }}</small>
-              {% if is_superadmin %}<div class="routine-admin-actions"><a href="{% url 'class_management' %}?edit_routine={{ routine.pk }}">সম্পাদনা</a><form method="post" onsubmit="return confirm('এই রুটিনটি মুছে ফেলতে চান?');">{% csrf_token %}<input type="hidden" name="action" value="delete_routine"><input type="hidden" name="routine_id" value="{{ routine.pk }}"><button type="submit">মুছুন</button></form></div>{% endif %}
-              {% endwith %}
-            {% else %}<span class="weekly-routine-empty">কোনো ক্লাস নেই</span>{% endif %}
-          {% else %}
-            {% if day.later_classes %}
-              {% for routine in day.later_classes %}
-                {% if is_superadmin or routine.teacher_id == request.user.id %}
-                <div class="weekly-routine-additional">
-                  {% if routine.is_revision %}<span class="routine-revision-badge">রিভিশন ক্লাস</span>{% endif %}
-                  <strong>{{ routine.get_year_group_display }} · {{ routine.subject }}{% if routine.paper %} · {{ routine.paper }}{% endif %}</strong>
-                  <span>{% if is_superadmin %}{{ routine.teacher.get_full_name|default:routine.teacher.username }} · {% endif %}{{ routine.chapter|default:"অধ্যায় যোগ হয়নি" }}</span>
-                  <small>{{ routine.start_time|time:"g:i A" }}–{{ routine.end_time|time:"g:i A" }}</small>
-                  {% if is_superadmin %}<div class="routine-admin-actions"><a href="{% url 'class_management' %}?edit_routine={{ routine.pk }}">সম্পাদনা</a><form method="post" onsubmit="return confirm('এই রুটিনটি মুছে ফেলতে চান?');">{% csrf_token %}<input type="hidden" name="action" value="delete_routine"><input type="hidden" name="routine_id" value="{{ routine.pk }}"><button type="submit">মুছুন</button></form></div>{% endif %}
-                </div>
-                {% endif %}
-              {% endfor %}
-            {% else %}<span class="weekly-routine-empty">কোনো দ্বিতীয় ক্লাস নেই</span>{% endif %}
-          {% endif %}
-          </div>
+      <article class="weekly-routine-day-column" data-weekday="{{ day.weekday }}">
+        <header class="weekly-routine-day-heading">
+          <span class="weekly-day-mark">{{ forloop.counter|stringformat:"02d" }}</span>
+          <strong>{{ day.label }}</strong>
+        </header>
+        {% for routine in day.classes %}
+        <div class="weekly-routine-class">
+          {% if routine.is_revision %}<span class="routine-revision-badge">রিভিশন ক্লাস</span>{% endif %}
+          <span class="weekly-routine-class-index">{% if forloop.counter == 1 %}১ম{% elif forloop.counter == 2 %}২য়{% elif forloop.counter == 3 %}৩য়{% else %}{{ forloop.counter }}তম{% endif %} ক্লাস</span>
+          <strong>{{ routine.get_year_group_display }} · {{ routine.subject }}{% if routine.paper %} · {{ routine.paper }}{% endif %}</strong>
+          <span>{{ routine.chapter|default:"অধ্যায় যোগ হয়নি" }}</span>
+          <small>{{ routine.start_time|time:"g:i A" }}–{{ routine.end_time|time:"g:i A" }}</small>
+        </div>
+        {% empty %}
+        <p class="weekly-routine-empty">কোনো ক্লাস নেই</p>
         {% endfor %}
-      </div>
+      </article>
       {% endfor %}
+    </div>
     </div>{% if not routines %}<div class="empty-state compact-empty"><span>◷</span><strong>এখনো রুটিন যোগ হয়নি</strong><p>সুপার অ্যাডমিন রুটিন যোগ করলে এখানে দেখা যাবে।</p></div>{% endif %}
     {% endif %}
   </article>

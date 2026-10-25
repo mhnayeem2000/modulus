@@ -41,6 +41,66 @@ class ExamResultTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.exam.title)
 
+    def test_exam_list_paginates_owner_scoped_exams_and_keeps_month_selection(self):
+        for index in range(9):
+            Exam.objects.create(
+                title=f'October exam {index}',
+                exam_date=f'2026-10-{index + 11:02d}',
+                class_name=self.student.class_name,
+                subject='পদার্থবিজ্ঞান',
+                paper='১ম পত্র',
+                chapter='ভেক্টর',
+                topic='অনুশীলন',
+                total_marks=20,
+                created_by=self.user,
+            )
+        another_teacher = get_user_model().objects.create_user(
+            username='another-exam-teacher',
+            password='safe-test-password',
+        )
+        Exam.objects.create(
+            title='Private exam',
+            exam_date='2026-10-15',
+            class_name=self.student.class_name,
+            subject='রসায়ন',
+            paper='১ম পত্র',
+            chapter='পরমাণু',
+            topic='অনুশীলন',
+            total_marks=20,
+            created_by=another_teacher,
+        )
+
+        response = self.client.get(reverse('exam_list'), {
+            'month': '2026-10',
+            'page': '2',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['page_obj'].paginator.count, 10)
+        self.assertEqual(response.context['page_obj'].number, 2)
+        self.assertContains(response, '?month=2026-10&page=1')
+        self.assertNotContains(response, 'Private exam')
+        october_day = next(
+            day
+            for week in response.context['calendar_days']
+            for day in week
+            if day['date'].isoformat() == '2026-10-10'
+        )
+        self.assertEqual([exam.pk for exam in october_day['exams']], [self.exam.pk])
+
+    def test_exam_calendar_month_navigation_changes_the_calendar_month(self):
+        response = self.client.get(reverse('exam_list'), {'month': '2026-10'})
+
+        self.assertEqual(response.context['calendar_month'].isoformat(), '2026-10-01')
+        self.assertEqual(response.context['previous_month'].isoformat(), '2026-09-01')
+        self.assertEqual(response.context['next_month'].isoformat(), '2026-11-01')
+        self.assertTrue(any(
+            exam.pk == self.exam.pk
+            for week in response.context['calendar_days']
+            for day in week
+            for exam in day['exams']
+        ))
+
     def test_teacher_can_record_student_marks(self):
         response = self.client.post(reverse('exam_results', args=[self.exam.pk]), {
             f'marks_{self.student.pk}': '16.5',

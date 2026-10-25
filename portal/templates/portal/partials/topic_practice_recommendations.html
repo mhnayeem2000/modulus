@@ -1,0 +1,13 @@
+<div class="practice-recommendation-result">
+  <h3>{{ chapter }} · পড়ার অগ্রাধিকার</h3>
+  <div class="practice-recommendation-columns">
+    <section aria-labelledby="cq-topic-recommendations">
+      <h4 id="cq-topic-recommendations">CQ-এর জন্য</h4>
+      <ol>{% for topic in recommendations.cq_topics %}<li>{{ topic }}</li>{% endfor %}</ol>
+    </section>
+    <section aria-labelledby="mcq-topic-recommendations">
+      <h4 id="mcq-topic-recommendations">MCQ-এর জন্য</h4>
+      <ol>{% for topic in recommendations.mcq_topics %}<li>{{ topic }}</li>{% endfor %}</ol>
+    </section>
+  </div>
+</div>

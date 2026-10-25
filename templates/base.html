@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="{% static 'images/Nav.png' %}">
-  <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20261015-30">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20261024-4">
   <script defer src="{% static 'js/curriculum-selects.js' %}"></script>
   <script defer src="{% static 'js/sms-ajax.js' %}?v=20261015-4"></script>
   <script>
@@ -32,7 +32,7 @@
     }
   </script>
 </head>
-<body{% if user_role == 'teacher' and request.resolver_match.url_name == 'teacher_dashboard' or user_role == 'teacher' and request.resolver_match.url_name == 'class_management' %} data-teacher-routine-version="{{ teacher_routine_version }}" data-teacher-routine-version-url="{% url 'teacher_routine_version' %}"{% endif %}{% if user_role == 'teacher' and request.resolver_match.url_name == 'teacher_dashboard' %} data-teacher-dashboard{% endif %}>
+<body{% if user_role == 'teacher' and request.resolver_match.url_name == 'teacher_dashboard' or user_role == 'teacher' and request.resolver_match.url_name == 'class_management' %} data-teacher-routine-version="{{ teacher_routine_version }}" data-teacher-routine-version-url="{% url 'teacher_routine_version' %}"{% endif %}{% if user_role == 'teacher' and request.resolver_match.url_name == 'teacher_dashboard' %} data-teacher-dashboard{% endif %}{% if user_role == 'student' and request.resolver_match.url_name == 'student_dashboard' %} data-student-dashboard{% endif %}>
   <div class="app-shell">
     <aside class="sidebar">
       <a class="brand" href="{% url 'dashboard' %}">
@@ -49,85 +49,91 @@
       <nav class="main-nav" aria-label="প্রধান নেভিগেশন">
         {% if user_role == 'student' %}
         <a class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}" href="{% url 'student_dashboard' %}" title="আমার ড্যাশবোর্ড">
-          <span class="nav-icon">⌂</span><span>আমার ড্যাশবোর্ড</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span><span>আমার ড্যাশবোর্ড</span>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'student_study_planner' %}active{% endif %}" href="{% url 'student_study_planner' %}" title="AI Practice · CQ and MCQ">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.64 5.64l2.12 2.12m8.48 8.48 2.12 2.12m0-12.72-2.12 2.12m-8.48 8.48-2.12 2.12"/><circle cx="12" cy="12" r="5"/></svg></span><span>AI Practice</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'student_routine' %}active{% endif %}" href="{% url 'student_routine' %}" title="ক্লাস ও রুটিন">
-          <span class="nav-icon">◷</span><span>ক্লাস ও রুটিন</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h3v3H8z"/></svg></span><span>ক্লাস ও রুটিন</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'student_exams' %}active{% endif %}" href="{% url 'student_exams' %}" title="পরীক্ষা">
-          <span class="nav-icon">▤</span><span>পরীক্ষা</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span>পরীক্ষা</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'student_materials' or request.resolver_match.url_name == 'student_books' %}active{% endif %}" href="{% url 'student_materials' %}" title="স্টাডি রিসোর্স">
-          <span class="nav-icon">▧</span><span>স্টাডি রিসোর্স</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20M8 7h8M8 10h6"/></svg></span><span>স্টাডি রিসোর্স</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'student_statistics' %}active{% endif %}" href="{% url 'student_statistics' %}" title="আমার পরিসংখ্যান">
-          <span class="nav-icon">↗</span><span>আমার পরিসংখ্যান</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11M10 20V5M16 20v-8M22 20H2"/></svg></span><span>আমার পরিসংখ্যান</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'student_results' %}active{% endif %}" href="{% url 'student_results' %}" title="আমার ফলাফল">
-          <span class="nav-icon">✓</span><span>আমার ফলাফল</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 14.8 8.7 21 9.6l-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/><path d="m9 12 2 2 4-4"/></svg></span><span>আমার ফলাফল</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'student_detail' or request.resolver_match.url_name == 'student_own_detail' %}active{% endif %}" href="{% url 'student_own_detail' %}" title="আমার অগ্রগতি">
-          <span class="nav-icon">↗</span><span>আমার অগ্রগতি</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/><path d="m13 11 6-6"/></svg></span><span>আমার অগ্রগতি</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'student_feedback' %}active{% endif %}" href="{% url 'student_feedback' %}" title="মতামত ও সহায়তা">
-          <span class="nav-icon">✦</span><span>মতামত ও সহায়তা</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg></span><span>মতামত ও সহায়তা</span>
         </a>
         {% elif user_role == 'superadmin' %}
         <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" href="{% url 'admin_dashboard' %}" title="সার্বিক ড্যাশবোর্ড">
-          <span class="nav-icon">⌂</span><span>সার্বিক ড্যাশবোর্ড</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg></span><span>সার্বিক ড্যাশবোর্ড</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'admin_teachers' %}active{% endif %}" href="{% url 'admin_teachers' %}" title="শিক্ষকবৃন্দ">
-          <span class="nav-icon">♙</span><span>শিক্ষকবৃন্দ</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM20 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg></span><span>শিক্ষকবৃন্দ</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'student_list' %}active{% endif %}" href="{% url 'student_list' %}" title="শিক্ষার্থীরা">
-          <span class="nav-icon">♧</span><span>শিক্ষার্থীরা</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11v5c3.5 3 8.5 3 12 0v-5M22 9v6"/></svg></span><span>শিক্ষার্থীরা</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'admin_student_accounts' %}active{% endif %}" href="{% url 'admin_student_accounts' %}" title="শিক্ষার্থীদের অ্যাকাউন্ট">
-          <span class="nav-icon">৳</span><span>শিক্ষার্থী অ্যাকাউন্ট</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span><span>শিক্ষার্থী অ্যাকাউন্ট</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'attendance_list' %}active{% endif %}" href="{% url 'attendance_list' %}" title="উপস্থিতি">
-          <span class="nav-icon">✓</span><span>উপস্থিতি</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18m-13 5 2 2 5-5"/></svg></span><span>উপস্থিতি</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'sms_report' %}active{% endif %}" href="{% url 'sms_report' %}" title="SMS রিপোর্ট">
-          <span class="nav-icon">✉</span><span>SMS রিপোর্ট</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><span>SMS রিপোর্ট</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'sms_system' %}active{% endif %}" href="{% url 'sms_system' %}" title="SMS System">
-          <span class="nav-icon">◉</span><span>SMS System</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/><path d="M8 12h8M8 9h5"/></svg></span><span>SMS System</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'admin_teacher_attendance' %}active{% endif %}" href="{% url 'admin_teacher_attendance' %}" title="শিক্ষকের উপস্থিতি">
-          <span class="nav-icon">◷</span><span>শিক্ষকের উপস্থিতি</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="m16 11 2 2 4-4"/></svg></span><span>শিক্ষকের উপস্থিতি</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'admin_student_feedback' %}active{% endif %}" href="{% url 'admin_student_feedback' %}" title="শিক্ষার্থীদের মতামত">
-          <span class="nav-icon">✦</span><span>শিক্ষার্থীদের মতামত</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg></span><span>শিক্ষার্থীদের মতামত</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'exam_list' or request.resolver_match.url_name == 'exam_results' %}active{% endif %}" href="{% url 'exam_list' %}" title="পরীক্ষা ও ফলাফল">
-          <span class="nav-icon">▤</span><span>পরীক্ষা ও ফলাফল</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l4 4v14H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M16 3v5h4M9 13l2 2 4-4M3 7v13a2 2 0 0 0 2 2h11"/></svg></span><span>পরীক্ষা ও ফলাফল</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'class_management' %}active{% endif %}" href="{% url 'class_management' %}" title="ক্লাস ও রুটিন">
-          <span class="nav-icon">◷</span><span>ক্লাস ও রুটিন</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>ক্লাস ও রুটিন</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'teacher_materials' %}active{% endif %}" href="{% url 'teacher_materials' %}" title="শিক্ষাসামগ্রী">
-          <span class="nav-icon">▧</span><span>শিক্ষাসামগ্রী</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20M8 7h8M8 10h6"/></svg></span><span>শিক্ষাসামগ্রী</span>
         </a>
         {% else %}
         <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}" href="{% url 'teacher_dashboard' %}">
-          <span class="nav-icon">⌂</span><span>ড্যাশবোর্ড</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span><span>ড্যাশবোর্ড</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'student_list' %}active{% endif %}" href="{% url 'student_list' %}" title="শিক্ষার্থী">
-          <span class="nav-icon">♙</span><span>শিক্ষার্থী</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21v-2a7 7 0 0 1 14 0v2M17 4a4 4 0 0 1 0 8M19 15a5 5 0 0 1 3 4v2"/></svg></span><span>শিক্ষার্থী</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'exam_list' or request.resolver_match.url_name == 'exam_results' %}active{% endif %}" href="{% url 'exam_list' %}" title="পরীক্ষা ও ফলাফল">
-          <span class="nav-icon">▤</span><span>পরীক্ষা ও ফলাফল</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span>পরীক্ষা ও ফলাফল</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'class_management' %}active{% endif %}" href="{% url 'class_management' %}" title="ক্লাস ও রুটিন">
-          <span class="nav-icon">◷</span><span>ক্লাস ও রুটিন</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h3v3H8z"/></svg></span><span>ক্লাস ও রুটিন</span>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'teacher_study_assignments' %}active{% endif %}" href="{% url 'teacher_study_assignments' %}" title="শিক্ষার্থীর পড়ার কাজ">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h11v17H5V7z"/><path d="M8 4v4H5m5 3h6m-6 4h6m-6 3h4"/></svg></span><span>Study Assignments</span>
         </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'teacher_materials' %}active{% endif %}" href="{% url 'teacher_materials' %}" title="শিট ও বই">
-          <span class="nav-icon">▧</span><span>শিট ও বই</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20M8 7h8M8 10h6"/></svg></span><span>শিট ও বই</span>
         </a>
         {% endif %}
         <a class="nav-link {% if request.resolver_match.url_name == 'install_app' %}active{% endif %}" href="{% url 'install_app' %}" title="Install App">
-          <span class="nav-icon">⇩</span><span>Install App</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 17v4h14v-4"/></svg></span><span>Install App</span>
         </a>
       </nav>
       <div class="sidebar-spacer"></div>
@@ -227,7 +233,7 @@
       {% for message in messages %}
       <div class="page-content"><div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-{{ message.tags }}{% endif %}" role="status">{{ message }}</div></div>
       {% endfor %}
-      <div class="page-content">{% block content %}{% endblock %}</div>
+      <div class="page-content {% block content_wrapper_class %}{% endblock %}">{% block content %}{% endblock %}</div>
       <footer class="page-footer">Modulus Edu <span>·</span> আপনার কোচিং ম্যানেজমেন্ট, আরও সহজ</footer>
     </main>
   </div>

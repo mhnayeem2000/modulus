@@ -15,17 +15,38 @@
     </form>
   </article>
   <article class="panel exam-list-panel">
-    <div class="panel-heading"><div><span class="eyebrow">পরীক্ষার তালিকা</span><h2>সকল পরীক্ষা</h2></div><span class="intro-count">{{ exams|length }}টি</span></div>
+    <div class="panel-heading"><div><span class="eyebrow">পরীক্ষার তালিকা</span><h2>সকল পরীক্ষা</h2></div><span class="intro-count">{{ page_obj.paginator.count }}টি</span></div>
+    <section class="exam-calendar" aria-label="মাসভিত্তিক পরীক্ষার ক্যালেন্ডার">
+      <header class="exam-calendar-heading">
+        <a class="button button-light button-small" href="?month={{ previous_month|date:'Y-m' }}&page={{ page_obj.number }}" aria-label="আগের মাস">←</a>
+        <h3>{{ calendar_month|date:"F Y" }}</h3>
+        <a class="button button-light button-small" href="?month={{ next_month|date:'Y-m' }}&page={{ page_obj.number }}" aria-label="পরের মাস">→</a>
+      </header>
+      <div class="exam-calendar-grid exam-calendar-weekdays">{% for weekday in calendar_weekdays %}<span>{{ weekday }}</span>{% endfor %}</div>
+      <div class="exam-calendar-grid">
+        {% for week in calendar_days %}{% for day in week %}
+        <details class="exam-calendar-day{% if not day.in_month %} is-outside{% endif %}{% if day.exams %} has-exams{% endif %}">
+          <summary><span>{{ day.date|date:"j" }}</span>{% if day.exams %}<i>{{ day.exams|length }}</i>{% endif %}</summary>
+          {% if day.exams %}<div class="exam-calendar-events">{% for exam in day.exams %}<a href="{% url 'exam_edit' exam.pk %}"><strong>{{ exam.title }}</strong><small>{{ exam.subject|default:exam.get_year_group_display }} · {{ exam.total_marks }} নম্বর</small></a>{% endfor %}</div>{% endif %}
+        </details>
+        {% endfor %}{% endfor %}
+      </div>
+    </section>
     {% if exams %}
     <div class="exam-list">
       {% for exam in exams %}
       <article class="exam-card">
         <div class="exam-card-top"><span class="exam-date-badge"><strong>{{ exam.exam_date|date:"d" }}</strong><small>{{ exam.exam_date|date:"M" }}</small></span><div class="exam-card-title"><h3>{{ exam.title }}</h3><p>{{ exam.get_year_group_display }} <span>·</span> {{ exam.exam_date|date:"j F, Y" }}</p></div><span class="marks-badge">{{ exam.total_marks }} নম্বর</span></div>
-        <div class="exam-details"><span><small>বিষয়</small>{{ exam.subject|default:"উল্লেখ নেই" }}</span><span><small>পত্র</small>{{ exam.paper }}</span><span><small>অধ্যায়</small>{{ exam.chapter }}</span><span><small>টপিক</small>{{ exam.topic }}</span></div>
-        <div class="exam-card-footer"><span>{{ exam.results.count }} জনের নম্বর দেওয়া হয়েছে</span><div><a class="button button-light button-small" href="{% url 'exam_edit' exam.pk %}">বিবরণ সংশোধন</a> <a class="button button-light button-small" href="{% url 'exam_results' exam.pk %}">নম্বর লিখুন <span>→</span></a></div></div>
+        <details class="exam-card-details"><summary>বিষয়, অধ্যায় ও অন্যান্য তথ্য</summary><div class="exam-details"><span><small>বিষয়</small>{{ exam.subject|default:"উল্লেখ নেই" }}</span><span><small>পত্র</small>{{ exam.paper }}</span><span><small>অধ্যায়</small>{{ exam.chapter }}</span><span><small>টপিক</small>{{ exam.topic }}</span></div></details>
+        <div class="exam-card-footer"><span>{{ exam.result_count }} জনের নম্বর দেওয়া হয়েছে</span><div><a class="button button-light button-small" href="{% url 'exam_edit' exam.pk %}">বিবরণ সংশোধন</a> <a class="button button-light button-small" href="{% url 'exam_results' exam.pk %}">নম্বর লিখুন <span>→</span></a></div></div>
       </article>
       {% endfor %}
     </div>
+    {% if page_obj.paginator.num_pages > 1 %}<nav class="exam-pagination" aria-label="পরীক্ষার তালিকার পৃষ্ঠা">
+      {% if page_obj.has_previous %}<a class="button button-light button-small" href="?month={{ calendar_month|date:'Y-m' }}&page={{ page_obj.previous_page_number }}">← আগের</a>{% endif %}
+      <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }} পৃষ্ঠা</span>
+      {% if page_obj.has_next %}<a class="button button-light button-small" href="?month={{ calendar_month|date:'Y-m' }}&page={{ page_obj.next_page_number }}">পরের →</a>{% endif %}
+    </nav>{% endif %}
     {% else %}<div class="empty-state"><span>▤</span><strong>এখনো পরীক্ষা তৈরি হয়নি</strong><p>বাম পাশের ফর্ম দিয়ে প্রথম পরীক্ষা যোগ করুন।</p></div>{% endif %}
   </article>
 </section>
