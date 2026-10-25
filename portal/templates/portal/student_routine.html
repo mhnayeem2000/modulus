@@ -5,7 +5,7 @@
 <section class="page-intro"><div><span class="eyebrow">{{ student.get_year_group_display }}</span><h1>ক্লাসের সময়সূচি</h1><p>কোন দিনে প্রথম ও দ্বিতীয় ক্লাস, শিক্ষক ও পড়ার বিষয়—সব এক নজরে।</p></div></section>
 <section class="panel weekly-routine-panel">
   <div class="panel-heading"><div><span class="eyebrow">সাপ্তাহিক সময়সূচি</span><h2>তোমার ব্যাচের পূর্ণ রুটিন</h2></div></div>
-  <div class="weekly-routine-grid">
+  <div class="weekly-routine-grid student-weekly-routine-grid">
     <div class="weekly-routine-header"><span>বার</span><span>১ম ক্লাস</span><span>২য় ক্লাস</span></div>
     {% for day in weekday_rows %}
     <div class="weekly-routine-row">

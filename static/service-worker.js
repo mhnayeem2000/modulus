@@ -1,6 +1,6 @@
-const CACHE_NAME = "modulus-static-v54";
+const CACHE_NAME = "modulus-static-v55";
 const STATIC_ASSETS = [
-  "/static/css/app.css?v=20261024-4",
+  "/static/css/app.css?v=20261026-1",
   "/static/js/curriculum-selects.js",
   "/static/js/study-planner.js?v=20261023-8",
   "/static/js/topic-practice.js?v=20261024-1",
@@ -17,7 +17,7 @@ const STATIC_ASSET_PATHS = new Set(STATIC_ASSETS.map((asset) => new URL(asset, s
 
 function cacheKeyFor(request, url) {
   if (url.pathname === "/static/css/app.css") {
-    return new URL("/static/css/app.css?v=20261024-4", self.location.origin);
+    return new URL("/static/css/app.css?v=20261026-1", self.location.origin);
   }
   if (url.pathname === "/static/js/study-planner.js") {
     return new URL("/static/js/study-planner.js?v=20261023-8", self.location.origin);

@@ -2520,6 +2520,7 @@ body { font-size: 17px; }
 .weekly-routine-panel, .management-routine-panel { min-width: 0; margin-bottom: 16px; }
 .weekly-routine-scroll { max-width: 100%; overflow-x: auto; margin-top: 8px; padding: 2px 2px 12px; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: #aeb8d4 #f0f2ff; -webkit-overflow-scrolling: touch; }
 .weekly-routine-grid { display: grid; grid-auto-columns: minmax(220px, 1fr); grid-auto-flow: column; gap: 12px; min-width: max-content; }
+.student-weekly-routine-grid { display: block; min-width: 0; }
 .weekly-routine-day-column { display: grid; align-content: start; gap: 8px; width: 230px; min-width: 0; padding: 12px; border: 1px solid #e7eaf2; border-radius: 12px; background: #fafbff; scroll-snap-align: start; }
 .weekly-routine-day-heading { display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid #e7eaf2; color: #36435c; }
 .weekly-routine-day-heading strong { font-size: 14px; }

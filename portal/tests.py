@@ -689,6 +689,7 @@ class StudentPortalTests(TestCase):
 
         self.assertEqual(day['first_class'], first_class)
         self.assertEqual(day['later_classes'], [second_class])
+        self.assertContains(response, 'student-weekly-routine-grid')
         self.assertContains(response, '১ম ক্লাস')
         self.assertContains(response, '২য় ক্লাস')
         self.assertContains(response, '3:00 অপরাহ্ন–4:30 অপরাহ্ন')
