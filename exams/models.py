@@ -20,6 +20,11 @@ class Exam(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='coaching_exams',
     )
+    assigned_teacher = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='assigned_exams',
+        limit_choices_to={'profile__role': 'teacher'},
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

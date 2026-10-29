@@ -1,5 +1,6 @@
 from datetime import date, datetime, time, timedelta
 
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateformat import time_format
 from django.utils.formats import date_format
@@ -22,10 +23,10 @@ def teacher_week_events(request):
         1,
     )
     teacher_month_exam_count = Exam.objects.filter(
-        created_by=request.user,
+        Q(created_by=request.user) | Q(assigned_teacher=request.user),
         exam_date__gte=month_start,
         exam_date__lt=next_month,
-    ).count()
+    ).distinct().count()
     week_end = today + timedelta(days=7)
     routines = Routine.objects.filter(teacher=request.user).order_by('weekday', 'start_time')
     class_events = []
@@ -63,10 +64,10 @@ def teacher_week_events(request):
 
     events = sorted(class_events, key=lambda event: event['starts_at'])[:1]
     exams = Exam.objects.filter(
-        created_by=request.user,
+        Q(created_by=request.user) | Q(assigned_teacher=request.user),
         exam_date__gte=today,
         exam_date__lt=week_end,
-    ).order_by('exam_date', 'created_at')
+    ).distinct().order_by('exam_date', 'created_at')
     for exam in exams:
         events.append({
             'kind': 'exam',

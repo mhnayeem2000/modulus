@@ -12,9 +12,9 @@
     <div class="practice-question-scroll" data-question-scroll>
       {% for question in session.questions.all %}
       <article class="practice-question{% if question.status == 'practiced' %} is-practiced{% elif question.status == 'needs_help' %} needs-help{% endif %}" data-practice-question>
-        <header><span class="practice-question-number">{{ forloop.counter }}</span><div><strong>{{ question.prompt|linebreaksbr }}</strong></div></header>
+        <header><span class="practice-question-number">{{ forloop.counter }}</span><div>{{ question.prompt|linebreaksbr }}</div></header>
         {% if question.choices %}<ol class="practice-mcq-choices" type="A">{% for choice in question.choices %}<li>{{ choice }}</li>{% endfor %}</ol>{% endif %}
-        <details class="practice-answer"><summary>উত্তর ও ব্যাখ্যা দেখো</summary><p><strong>উত্তর:</strong> {{ question.answer|linebreaksbr }}</p>{% if question.explanation %}<p><strong>ব্যাখ্যা:</strong> {{ question.explanation|linebreaksbr }}</p>{% endif %}</details>
+        <details class="practice-answer"><summary>উত্তর ও ব্যাখ্যা দেখো</summary><p><span class="practice-answer-label">উত্তর:</span> {{ question.answer|linebreaksbr }}</p>{% if question.explanation %}<p><span class="practice-answer-label">ব্যাখ্যা:</span> {{ question.explanation|linebreaksbr }}</p>{% endif %}</details>
         <div class="practice-question-actions" data-status-url="{% url 'update_topic_practice_status' question.pk %}">
           <button type="button" class="practice-status-button{% if question.status == 'practiced' %} active{% endif %}" data-question-status="practiced" aria-pressed="{% if question.status == 'practiced' %}true{% else %}false{% endif %}">✓ পড়েছি</button>
           <button type="button" class="practice-status-button status-problem{% if question.status == 'needs_help' %} active{% endif %}" data-question-status="needs_help" aria-pressed="{% if question.status == 'needs_help' %}true{% else %}false{% endif %}">✗ সমস্যা</button>

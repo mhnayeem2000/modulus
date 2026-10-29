@@ -2,16 +2,16 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Case, Count, DecimalField, F, Max, Q, Sum, Value, When
-from django.http import FileResponse, Http404
-from django.http import JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -38,6 +38,8 @@ from .forms import (
     TeacherForm,
     TeacherUpdateForm,
 )
+from .fee_receipts import build_fee_receipt, receipt_asset_paths
+from .fees import fee_summary_for_month, month_display_label, monthly_fee_for_month
 from .models import (
     ClassSession,
     ClassSessionProgress,
@@ -50,7 +52,7 @@ from .models import (
     UserProfile,
 )
 from .routine_version import get_teacher_routine_version
-from .resources import STUDENT_BOOK_SECTIONS, mobile_pdf_download_url
+from .resources import STUDENT_BOOK_SECTIONS, mobile_pdf_preview_url
 from .study_progress import (
     build_class_session_progress,
     get_study_report_date,
@@ -161,8 +163,16 @@ def student_for_user(user):
     return student
 
 
+def routines_for_student(student):
+    return list(
+        Routine.objects.filter(year_group=student.year_group)
+        .select_related('teacher')
+        .order_by('weekday', 'start_time')
+    )
+
+
 def class_session_submission_deadline(session):
-    deadline_date = session.date + timedelta(days=1)
+    deadline_date = session.date + timedelta(days=3)
     return timezone.make_aware(
         datetime.combine(deadline_date, datetime.strptime('00:00', '%H:%M').time()),
         timezone.get_current_timezone(),
@@ -187,6 +197,12 @@ def format_countdown(seconds):
 def student_dashboard(request):
     student = student_for_user(request.user)
     today = timezone.localdate()
+    try:
+        study_date = date.fromisoformat(request.GET.get('study_date', ''))
+    except ValueError:
+        study_date = today
+    if study_date > today:
+        study_date = today
     local_now = timezone.localtime()
     attendance_calendar = build_attendance_calendar(
         student,
@@ -195,11 +211,7 @@ def student_dashboard(request):
     )
     tomorrow = today + timedelta(days=1)
     week_end = today + timedelta(days=6 - today.weekday())
-    routines = list(
-        Routine.objects.filter(year_group=student.year_group)
-        .select_related('teacher')
-        .order_by('weekday', 'start_time')
-    )
+    routines = routines_for_student(student)
     class_occurrences = []
     for routine in routines:
         days_ahead = (routine.weekday - today.weekday()) % 7
@@ -220,13 +232,14 @@ def student_dashboard(request):
             timezone.get_current_timezone(),
         )
         class_occurrences.append((starts_at, routine, class_date, status))
-    next_class = None
-    if class_occurrences:
-        starts_at, routine, class_date, status = min(
-            class_occurrences,
-            key=lambda occurrence: (occurrence[0] < local_now, occurrence[0]),
+    class_occurrences.sort(
+        key=lambda occurrence: (
+            occurrence[3] != 'running',
+            occurrence[0],
         )
-        next_class = {
+    )
+    next_classes = [
+        {
             'routine': routine,
             'date': class_date,
             'status': status,
@@ -240,22 +253,25 @@ def student_dashboard(request):
                 f'{time_format(routine.end_time, "g:i A")}'
             ),
         }
+        for _, routine, class_date, status in class_occurrences[:2]
+    ]
+    next_class = next_classes[0] if next_classes else None
     next_exam = Exam.objects.filter(
         year_group=student.year_group,
         exam_date__gte=today,
     ).order_by('exam_date', 'created_at').first()
-    tomorrow_classes = Routine.objects.filter(
-        year_group=student.year_group,
-        weekday=tomorrow.weekday(),
-    ).select_related('teacher').order_by('start_time')
+    tomorrow_classes = [
+        routine for routine in routines
+        if routine.weekday == tomorrow.weekday()
+    ]
     weekly_exams = Exam.objects.filter(
         year_group=student.year_group,
         exam_date__gte=today,
         exam_date__lte=week_end,
     ).order_by('exam_date', 'created_at')
-    today_study_sessions = list(
+    study_sessions = list(
         ClassSession.objects.filter(
-            date=today,
+            date=study_date,
             year_group=student.year_group,
         ).select_related('teacher').order_by('created_at', 'pk')
     )
@@ -263,21 +279,21 @@ def student_dashboard(request):
         progress.session_id: progress
         for progress in ClassSessionProgress.objects.filter(
             student=student,
-            session__in=today_study_sessions,
+            session__in=study_sessions,
         )
     }
     now = timezone.now()
-    today_study_context = []
-    for session in today_study_sessions:
+    study_context = []
+    for session in study_sessions:
         progress = student_progress.get(session.pk)
         deadline = class_session_submission_deadline(session)
         time_left = max(0, (deadline - now).total_seconds())
-        is_past_deadline = now > deadline
+        is_past_deadline = now >= deadline
         is_complete = bool(progress and progress.is_completed)
         display_status = 'completed' if is_complete else 'pending'
         if is_past_deadline and not is_complete:
             display_status = 'missed'
-        today_study_context.append({
+        study_context.append({
             'session': session,
             'progress': progress,
             'deadline': deadline,
@@ -288,14 +304,21 @@ def student_dashboard(request):
             'can_submit': not is_past_deadline,
         })
     student_fee_records = list(StudentFeeRecord.objects.filter(student=student).order_by('-month'))
+    for record in student_fee_records:
+        record.month_label = month_display_label(record.month)
     student_fee_total = sum((record.monthly_fee for record in student_fee_records), Decimal('0.00'))
     student_fee_paid = sum((record.amount_paid for record in student_fee_records), Decimal('0.00'))
     student_fee_due = sum((record.due_amount for record in student_fee_records), Decimal('0.00'))
     current_fee_month = today.strftime('%Y-%m')
-    student_fee_current_record = next(
-        (record for record in student_fee_records if record.month == current_fee_month),
-        None,
+    current_fee_summary = fee_summary_for_month(
+        student_fee_records,
+        current_fee_month,
+        carry_forward=True,
     )
+    student_fee_current_record = current_fee_summary['record']
+    student_fee_current_monthly_fee = current_fee_summary['monthly_fee']
+    student_fee_current_paid = current_fee_summary['amount_paid']
+    student_fee_current_due = current_fee_summary['due_amount']
     return render(request, 'portal/student_dashboard.html', {
         'student': student,
         **attendance_calendar,
@@ -303,19 +326,87 @@ def student_dashboard(request):
         'support_session_url': SUPPORT_SESSION_URL,
         'tomorrow': tomorrow,
         'next_class': next_class,
+        'next_classes': next_classes,
         'next_exam': next_exam,
         'tomorrow_classes': tomorrow_classes,
         'week_end': week_end,
         'weekly_exams': weekly_exams,
-        'today_study_sessions': today_study_context,
+        'today_study_sessions': study_context,
+        'study_date': study_date,
         'student_fee_records': student_fee_records,
         'student_fee_total': student_fee_total,
         'student_fee_paid': student_fee_paid,
         'student_fee_due': student_fee_due,
-        'student_fee_up_to_date': student_fee_due == 0,
+        'student_fee_up_to_date': (
+            student_fee_current_monthly_fee > 0 and student_fee_current_due == 0
+        ),
+        'student_fee_current_has_charge': student_fee_current_monthly_fee > 0,
         'student_fee_current_month': current_fee_month,
+        'student_fee_current_month_label': month_display_label(current_fee_month),
         'student_fee_current_record': student_fee_current_record,
+        'student_fee_current_monthly_fee': student_fee_current_monthly_fee,
+        'student_fee_current_paid': student_fee_current_paid,
+        'student_fee_current_due': student_fee_current_due,
     })
+
+
+def fee_receipt_response(record):
+    outstanding_amount = sum(
+        (
+            fee_record.due_amount
+            for fee_record in StudentFeeRecord.objects.filter(student=record.student)
+        ),
+        Decimal('0.00'),
+    )
+    logo_path, font_path = receipt_asset_paths(settings.BASE_DIR)
+    receipt_pdf = build_fee_receipt(
+        record,
+        outstanding_amount,
+        logo_path,
+        font_path,
+    )
+    response = HttpResponse(receipt_pdf, content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'attachment; filename="receipt-{record.student_id}-{record.month}.pdf"'
+    )
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
+@role_required('student')
+def student_fee_receipt(request, month):
+    try:
+        parsed_month = datetime.strptime(month, '%Y-%m')
+    except ValueError as exc:
+        raise Http404('বেতনের মাসটি সঠিক নয়।') from exc
+    if parsed_month.strftime('%Y-%m') != month:
+        raise Http404('বেতনের মাসটি সঠিক নয়।')
+    student = student_for_user(request.user)
+    record = get_object_or_404(
+        StudentFeeRecord.objects.select_related('student'),
+        student=student,
+        month=month,
+        amount_paid__gt=0,
+    )
+    return fee_receipt_response(record)
+
+
+@role_required('superadmin')
+def admin_student_fee_receipt(request, student_id, month):
+    try:
+        parsed_month = datetime.strptime(month, '%Y-%m')
+    except ValueError as exc:
+        raise Http404('বেতনের মাসটি সঠিক নয়।') from exc
+    if parsed_month.strftime('%Y-%m') != month:
+        raise Http404('বেতনের মাসটি সঠিক নয়।')
+    record = get_object_or_404(
+        StudentFeeRecord.objects.select_related('student'),
+        student_id=student_id,
+        student__is_active=True,
+        month=month,
+        amount_paid__gt=0,
+    )
+    return fee_receipt_response(record)
 
 
 @role_required('student')
@@ -325,7 +416,7 @@ def update_class_session_progress(request, session_id):
     session = get_object_or_404(
         ClassSession,
         pk=session_id,
-        date=timezone.localdate(),
+        date__lte=timezone.localdate(),
         year_group=student.year_group,
     )
     form = ClassSessionProgressForm(request.POST)
@@ -335,7 +426,9 @@ def update_class_session_progress(request, session_id):
 
     if timezone.now() >= class_session_submission_deadline(session):
         messages.error(request, 'এই ক্লাসের জমা দেওয়ার সময় শেষ হয়ে গেছে। পরে আবার জমা দেওয়া সম্ভব নয়।')
-        return redirect('student_dashboard')
+        return redirect(
+            f"{reverse('student_dashboard')}?study_date={session.date.isoformat()}#todays-study"
+        )
 
     ClassSessionProgress.objects.update_or_create(
         session=session,
@@ -345,8 +438,12 @@ def update_class_session_progress(request, session_id):
             'problem_description': form.cleaned_data['problem_description'].strip(),
         },
     )
-    messages.success(request, 'আজকের পড়ার অগ্রগতি সংরক্ষণ করা হয়েছে।')
-    return redirect('student_dashboard')
+    messages.success(request, 'পড়ার অগ্রগতি সংরক্ষণ করা হয়েছে।')
+    if session.date == timezone.localdate():
+        return redirect('student_dashboard')
+    return redirect(
+        f"{reverse('student_dashboard')}?study_date={session.date.isoformat()}#todays-study"
+    )
 
 
 @role_required('student')
@@ -380,11 +477,7 @@ def admin_student_feedback(request):
 @role_required('student')
 def student_routine(request):
     student = student_for_user(request.user)
-    routines = list(
-        Routine.objects.filter(year_group=student.year_group)
-        .select_related('teacher')
-        .order_by('weekday', 'start_time')
-    )
+    routines = routines_for_student(student)
     weekday_rows = build_weekday_rows(routines)
     context = {
         'student': student,
@@ -484,7 +577,7 @@ def student_materials(request):
         {
             **section,
             'chapters': [
-                (chapter, url, mobile_pdf_download_url(url))
+                (chapter, url, mobile_pdf_preview_url(url))
                 for chapter, url in section['chapters']
             ],
         }
@@ -710,6 +803,7 @@ def download_material(request, material_id):
 @role_required('superadmin')
 def admin_dashboard(request):
     ensure_teacher_profiles()
+    current_month = timezone.localdate().strftime('%Y-%m')
     study_report_date = get_study_report_date(request.GET.get('study_date', '').strip())
     today_study_sessions, study_report_page = paginate_study_progress(
         build_class_session_progress(
@@ -722,38 +816,27 @@ def admin_dashboard(request):
         ),
         request.GET.get('study_page', 1),
     )
-    student_fee_statuses = Student.objects.filter(is_active=True).annotate(
-        fee_record_count=Count('fee_records'),
-        fee_due=Sum(
-            Case(
-                When(
-                    fee_records__amount_paid__lt=F('fee_records__monthly_fee'),
-                    then=F('fee_records__monthly_fee') - F('fee_records__amount_paid'),
-                ),
-                default=Value(0),
-                output_field=DecimalField(max_digits=12, decimal_places=2),
-            )
-        ),
-    )
-    fee_paid_students = sum(
-        1 for student in student_fee_statuses
-        if student.fee_record_count and (student.fee_due or Decimal('0.00')) == 0
-    )
-    fee_unpaid_students = Student.objects.filter(is_active=True).count() - fee_paid_students
-    fee_totals = StudentFeeRecord.objects.aggregate(
-        total_earned=Sum('monthly_fee'),
-        total_collected=Sum('amount_paid'),
-        total_due=Sum(
-            Case(
-                When(
-                    amount_paid__lt=F('monthly_fee'),
-                    then=F('monthly_fee') - F('amount_paid'),
-                ),
-                default=Value(0),
-                output_field=DecimalField(max_digits=12, decimal_places=2),
-            )
-        ),
-    )
+    fee_paid_students = 0
+    fee_unpaid_students = 0
+    fee_unrecorded_students = 0
+    fee_total_earned = Decimal('0.00')
+    fee_total_collected = Decimal('0.00')
+    fee_total_due = Decimal('0.00')
+    for student in Student.objects.filter(is_active=True).prefetch_related('fee_records'):
+        records = list(student.fee_records.all())
+        current_record = next((record for record in records if record.month == current_month), None)
+        monthly_fee = monthly_fee_for_month(records, current_month)
+        amount_paid = current_record.amount_paid if current_record else Decimal('0.00')
+        due_amount = max(monthly_fee - amount_paid, Decimal('0.00'))
+        fee_total_earned += monthly_fee
+        fee_total_collected += amount_paid
+        fee_total_due += due_amount
+        if monthly_fee <= 0:
+            fee_unrecorded_students += 1
+        elif due_amount:
+            fee_unpaid_students += 1
+        else:
+            fee_paid_students += 1
     return render(request, 'portal/admin_dashboard.html', {
         'teacher_count': get_user_model().objects.filter(profile__role=UserProfile.Role.TEACHER).count(),
         'student_count': Student.objects.filter(is_active=True).count(),
@@ -767,22 +850,39 @@ def admin_dashboard(request):
         'today_study_year_groups': group_class_session_progress(today_study_sessions),
         'study_report_date': study_report_date,
         'study_report_page': study_report_page,
+        'fee_current_month': current_month,
+        'fee_current_month_label': month_display_label(current_month),
         'recent_teachers': get_user_model().objects.filter(
             profile__role=UserProfile.Role.TEACHER,
         ).order_by('first_name', 'username')[:6],
         'fee_paid_students': fee_paid_students,
         'fee_unpaid_students': fee_unpaid_students,
-        'fee_total_earned': fee_totals['total_earned'] or Decimal('0.00'),
-        'fee_total_collected': fee_totals['total_collected'] or Decimal('0.00'),
-        'fee_total_due': fee_totals['total_due'] or Decimal('0.00'),
+        'fee_unrecorded_students': fee_unrecorded_students,
+        'fee_total_earned': fee_total_earned,
+        'fee_total_collected': fee_total_collected,
+        'fee_total_due': fee_total_due,
     })
 
 
 @role_required('superadmin')
 def admin_student_accounts(request):
     ensure_teacher_profiles()
+    fee_form_instance = None
+    if request.method == 'POST' and 'student_fee_submit' in request.POST:
+        try:
+            student_pk = Student._meta.pk.to_python(request.POST.get('student'))
+            month = request.POST.get('month', '').strip()
+            datetime.strptime(month, '%Y-%m')
+        except (TypeError, ValueError, ValidationError):
+            pass
+        else:
+            fee_form_instance = StudentFeeRecord.objects.filter(
+                student_id=student_pk,
+                month=month,
+            ).first()
     fee_form = StudentFeeRecordForm(
-        request.POST if request.method == 'POST' and 'student_fee_submit' in request.POST else None
+        request.POST if request.method == 'POST' and 'student_fee_submit' in request.POST else None,
+        instance=fee_form_instance,
     )
     current_month = timezone.localdate().strftime('%Y-%m')
     if request.method == 'POST' and 'student_fee_submit' in request.POST:
@@ -825,25 +925,83 @@ def admin_student_accounts(request):
             )
             return redirect('admin_student_accounts')
 
+    selected_month_date, selected_month_value = selected_month(request)
+    selected_month_label = month_display_label(selected_month_value)
+    current_month_label = month_display_label(current_month)
+    overall_fee_totals = StudentFeeRecord.objects.filter(
+        student__is_active=True,
+    ).aggregate(
+        total_fee=Sum('monthly_fee'),
+        total_paid=Sum('amount_paid'),
+        total_due=Sum(
+            Case(
+                When(
+                    amount_paid__lt=F('monthly_fee'),
+                    then=F('monthly_fee') - F('amount_paid'),
+                ),
+                default=Value(0),
+                output_field=DecimalField(max_digits=12, decimal_places=2),
+            )
+        ),
+    )
     student_fee_rows = []
     current_month_estimate = Decimal('0.00')
     current_month_due_estimate = Decimal('0.00')
     current_month_fee_set_count = 0
+    selected_month_total_fee = Decimal('0.00')
+    selected_month_total_paid = Decimal('0.00')
+    selected_month_total_due = Decimal('0.00')
+    selected_month_fee_set_count = 0
+    selected_month_paid_students = 0
+    selected_month_due_students = 0
     for student in Student.objects.filter(is_active=True).prefetch_related('fee_records').order_by('name'):
         records = sorted(student.fee_records.all(), key=lambda record: record.month, reverse=True)
+        for record in records:
+            record.month_label = month_display_label(record.month)
         total_fee = sum((record.monthly_fee for record in records), Decimal('0.00'))
         total_paid = sum((record.amount_paid for record in records), Decimal('0.00'))
         total_due = sum((record.due_amount for record in records), Decimal('0.00'))
-        current_record = next((record for record in records if record.month == current_month), None)
-        if current_record:
-            current_month_estimate += current_record.monthly_fee
-            current_month_due_estimate += current_record.due_amount
+        current_summary = fee_summary_for_month(records, current_month, carry_forward=True)
+        current_record = current_summary['record']
+        selected_summary = fee_summary_for_month(
+            records,
+            selected_month_value,
+            carry_forward=selected_month_value == current_month,
+        )
+        selected_record = selected_summary['record']
+        last_paid_record = next(
+            (record for record in records if record.amount_paid > 0),
+            None,
+        )
+        current_monthly_fee = current_summary['monthly_fee']
+        current_month_paid = current_summary['amount_paid']
+        current_month_due = current_summary['due_amount']
+        if current_monthly_fee > 0:
+            current_month_estimate += current_monthly_fee
+            current_month_due_estimate += current_month_due
             current_month_fee_set_count += 1
+        selected_month_fee = selected_summary['monthly_fee']
+        selected_month_paid = selected_summary['amount_paid']
+        selected_month_due = selected_summary['due_amount']
+        selected_month_has_fee = selected_month_fee > 0
+        if selected_month_has_fee:
+            selected_month_total_fee += selected_month_fee
+            selected_month_total_paid += selected_month_paid
+            selected_month_total_due += selected_month_due
+            selected_month_fee_set_count += 1
+            if selected_month_due:
+                selected_month_due_students += 1
+            else:
+                selected_month_paid_students += 1
         row_monthly_fee_form = (
             inline_fee_form
             if inline_student_id and str(student.pk) == str(inline_student_id)
             else StudentMonthlyFeeForm(
-                initial={'monthly_fee': current_record.monthly_fee} if current_record else None,
+                initial=(
+                    {'monthly_fee': current_monthly_fee}
+                    if current_record or current_monthly_fee > 0
+                    else None
+                ),
                 prefix=f'monthly_fee_{student.pk}',
             )
         )
@@ -851,33 +1009,79 @@ def admin_student_accounts(request):
             'student': student,
             'records': records,
             'current_record': current_record,
+            'selected_record': selected_record,
+            'last_paid_record': last_paid_record,
+            'selected_month_has_fee': selected_month_has_fee,
+            'selected_month_fee': selected_month_fee,
+            'selected_month_paid': selected_month_paid,
+            'selected_month_due': selected_month_due,
+            'current_month_paid': current_month_paid,
+            'current_month_due': current_month_due,
+            'current_month_fee': current_monthly_fee,
             'monthly_fee_form': row_monthly_fee_form,
             'total_fee': total_fee,
             'total_paid': total_paid,
             'total_due': total_due,
-            'is_up_to_date': bool(records) and total_due == 0,
+            'is_up_to_date': current_monthly_fee > 0 and current_month_due == 0,
         })
     fee_due_only = request.GET.get('fee_due_only') == '1'
     fee_order = request.GET.get('fee_order', 'due_desc')
+    fee_status = request.GET.get('fee_status', 'all')
+    if fee_status not in {'all', 'paid', 'due', 'unrecorded'}:
+        fee_status = 'all'
     filtered_rows = [
         row for row in student_fee_rows
-        if not fee_due_only or row['total_due'] > 0 or not row['records']
+        if (
+            fee_status == 'all'
+            or (
+                fee_status == 'paid'
+                and row['selected_record']
+                and row['selected_month_has_fee']
+                and row['selected_month_due'] == 0
+            )
+            or (fee_status == 'due' and row['selected_month_due'] > 0)
+            or (
+                fee_status == 'unrecorded'
+                and not row['selected_month_has_fee']
+            )
+        )
+        and (
+            not fee_due_only
+            or row['selected_month_due'] > 0
+            or not row['selected_record']
+        )
     ]
     if fee_order == 'due_asc':
-        filtered_rows.sort(key=lambda row: row['total_due'])
+        filtered_rows.sort(key=lambda row: row['selected_month_due'])
     elif fee_order == 'payment_desc':
-        filtered_rows.sort(key=lambda row: row['total_paid'], reverse=True)
+        filtered_rows.sort(key=lambda row: row['selected_month_paid'], reverse=True)
     elif fee_order == 'name':
         filtered_rows.sort(key=lambda row: row['student'].name.casefold())
     else:
-        filtered_rows.sort(key=lambda row: row['total_due'], reverse=True)
+        filtered_rows.sort(key=lambda row: row['selected_month_due'], reverse=True)
     student_fee_page = Paginator(filtered_rows, 10).get_page(request.GET.get('page', 1))
     return render(request, 'portal/admin_student_accounts.html', {
         'student_fee_form': fee_form,
         'student_fee_page': student_fee_page,
         'fee_due_only': fee_due_only,
         'fee_order': fee_order,
+        'fee_status': fee_status,
         'current_month': current_month,
+        'current_month_label': current_month_label,
+        'selected_month': selected_month_value,
+        'selected_month_label': selected_month_label,
+        'selected_month_date': selected_month_date,
+        'selected_month_total_fee': selected_month_total_fee,
+        'selected_month_total_paid': selected_month_total_paid,
+        'selected_month_total_due': selected_month_total_due,
+        'selected_month_paid_students': selected_month_paid_students,
+        'selected_month_due_students': selected_month_due_students,
+        'selected_month_unrecorded_students': (
+            len(student_fee_rows) - selected_month_fee_set_count
+        ),
+        'overall_total_fee': overall_fee_totals['total_fee'] or Decimal('0.00'),
+        'overall_total_paid': overall_fee_totals['total_paid'] or Decimal('0.00'),
+        'overall_total_due': overall_fee_totals['total_due'] or Decimal('0.00'),
         'current_month_estimate': current_month_estimate,
         'current_month_due_estimate': current_month_due_estimate,
         'current_month_fee_set_count': current_month_fee_set_count,
@@ -1045,8 +1249,9 @@ def admin_teachers(request):
             teacher=teacher, date__gte=month_start, date__lt=next_month,
         )
         exams = Exam.objects.filter(
-            created_by=teacher, exam_date__gte=month_start, exam_date__lt=next_month,
-        )
+            Q(created_by=teacher) | Q(assigned_teacher=teacher),
+            exam_date__gte=month_start, exam_date__lt=next_month,
+        ).distinct()
         session_chapters = list(
             sessions.values('year_group', 'subject', 'chapter').annotate(total=Count('id')).order_by('year_group', 'chapter')
         )

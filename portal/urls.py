@@ -9,6 +9,11 @@ urlpatterns = [
     path('account/profile/', views.account_profile, name='account_profile'),
     path('account/password/', views.account_password, name='account_password'),
     path('student/', views.student_dashboard, name='student_dashboard'),
+    path(
+        'student/fees/<str:month>/receipt.pdf',
+        views.student_fee_receipt,
+        name='student_fee_receipt',
+    ),
     path('student/study-planner/', topic_practice_views.student_topic_practice, name='student_study_planner'),
     path(
         'student/study-planner/legacy/',
@@ -67,6 +72,11 @@ urlpatterns = [
     path('materials/<int:material_id>/delete/', views.delete_material, name='delete_material'),
     path('management/', views.admin_dashboard, name='admin_dashboard'),
     path('management/student-accounts/', views.admin_student_accounts, name='admin_student_accounts'),
+    path(
+        'management/student-accounts/<int:student_id>/<str:month>/receipt.pdf',
+        views.admin_student_fee_receipt,
+        name='admin_student_fee_receipt',
+    ),
     path('management/student-feedback/', views.admin_student_feedback, name='admin_student_feedback'),
     path('management/teachers/', views.admin_teachers, name='admin_teachers'),
     path(

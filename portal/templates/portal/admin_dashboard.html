@@ -15,16 +15,17 @@
     <div>
       <span class="eyebrow">বেতন ও বাকি</span>
       <h2>শিক্ষার্থী অ্যাকাউন্ট · সার্বিক হিসাব</h2>
-      <p class="muted">সব মাসের মোট বেতন, আদায় ও বকেয়ার সারাংশ। মাসভিত্তিক বিস্তারিত অ্যাকাউন্ট পাতায় দেখুন।</p>
+      <p class="muted">{{ fee_current_month_label }} মাসের ধার্য, আদায় ও বকেয়ার সারাংশ। সব মাসের বিস্তারিত অ্যাকাউন্ট পাতায় দেখুন।</p>
     </div>
     <a class="button button-primary button-small" href="{% url 'admin_student_accounts' %}">বিস্তারিত অ্যাকাউন্ট <span>→</span></a>
   </div>
   <div class="fee-overview-grid">
-    <article class="fee-overview-card fee-overview-green"><span>বেতন দিয়েছে</span><strong>{{ fee_paid_students }}</strong><small>শিক্ষার্থী</small></article>
-    <article class="fee-overview-card fee-overview-orange"><span>বেতন দেয়নি / বাকি আছে</span><strong>{{ fee_unpaid_students }}</strong><small>শিক্ষার্থী</small></article>
-    <article class="fee-overview-card fee-overview-blue"><span>মোট আদায়</span><strong>{{ fee_total_collected }}</strong><small>টাকা · সব মাস মিলিয়ে</small></article>
-    <article class="fee-overview-card fee-overview-red"><span>এখনো বকেয়া</span><strong>{{ fee_total_due }}</strong><small>টাকা · সব মাস মিলিয়ে</small></article>
-    <article class="fee-overview-card fee-overview-purple"><span>মোট নির্ধারিত বেতন</span><strong>{{ fee_total_earned }}</strong><small>টাকা · সব মাস মিলিয়ে</small></article>
+    <article class="fee-overview-card fee-overview-green"><span>এই মাসে পুরো বেতন দিয়েছে</span><strong>{{ fee_paid_students }}</strong><small>শিক্ষার্থী</small></article>
+    <article class="fee-overview-card fee-overview-orange"><span>এই মাসের বেতন পুরো দেয়নি</span><strong>{{ fee_unpaid_students }}</strong><small>শিক্ষার্থী · বাকি {{ fee_total_due }} টাকা</small></article>
+    <article class="fee-overview-card fee-overview-blue"><span>এই মাসে মোট আদায়</span><strong>{{ fee_total_collected }}</strong><small>টাকা</small></article>
+    <article class="fee-overview-card fee-overview-red"><span>এই মাসে মোট বাকি</span><strong>{{ fee_total_due }}</strong><small>টাকা</small></article>
+    <article class="fee-overview-card fee-overview-purple"><span>এই মাসে মোট ধার্য</span><strong>{{ fee_total_earned }}</strong><small>টাকা</small></article>
+    <article class="fee-overview-card fee-overview-orange"><span>এই মাসের হিসাব রেকর্ড হয়নি</span><strong>{{ fee_unrecorded_students }}</strong><small>শিক্ষার্থী</small></article>
   </div>
 </section>
 <section class="panel admin-attendance-link"><div class="panel-heading"><div><span class="eyebrow">শিক্ষক উপস্থিতি</span><h2>শিক্ষকরা ক্লাসে উপস্থিত হয়েছেন কি না</h2><p class="muted">{{ pending_teacher_attendance }}টি স্ব-উপস্থিতির আবেদন অনুমোদনের অপেক্ষায়</p></div><a class="button button-primary button-small" href="{% url 'admin_teacher_attendance' %}">উপস্থিতি যাচাই করুন <span>→</span></a></div></section>

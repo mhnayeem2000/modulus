@@ -17,38 +17,46 @@
 <section class="panel fee-summary-panel">
   <div class="panel-heading">
     <div><span class="eyebrow">বেতন ও বকেয়া</span><h2>আমার বেতন সংক্ষিপ্তসার</h2><p class="muted">কোন মাসে কত দেওয়া হয়েছে, কত বাকি আছে দেখা যাবে।</p></div>
-    <span class="fee-status {% if student_fee_up_to_date %}fee-status-updated{% else %}fee-status-due{% endif %}">{% if student_fee_up_to_date %}Up to date{% else %}Due{% endif %}</span>
+    <span class="fee-status {% if student_fee_up_to_date %}fee-status-updated{% elif student_fee_current_has_charge %}fee-status-due{% else %}fee-status-unset{% endif %}">
+      {% if student_fee_up_to_date %}Up to date{% elif student_fee_current_has_charge %}বেতন বাকি{% else %}বেতন নির্ধারিত হয়নি{% endif %}
+    </span>
   </div>
-  <div class="student-current-fee">
-    <span>{{ student_fee_current_month }} · এই মাসের নির্ধারিত বেতন</span>
-    {% if student_fee_current_record %}
-    <strong>{{ student_fee_current_record.monthly_fee }} টাকা</strong>
-    <small>এ মাসে দেওয়া {{ student_fee_current_record.amount_paid }} টাকা · বাকি {{ student_fee_current_record.due_amount }} টাকা</small>
+  <div class="student-current-fee {% if student_fee_up_to_date %}is-paid{% elif student_fee_current_has_charge %}is-due{% endif %}">
+    <span>{{ student_fee_current_month_label }} · বেতনের হিসাব</span>
+    {% if student_fee_current_has_charge %}
+      {% if student_fee_up_to_date %}
+    <strong>এই মাসের বেতন পরিশোধিত · Up to date</strong>
+      {% elif student_fee_current_paid == 0 %}
+    <strong>আপনি এই মাসের বেতন পরিশোধ করেননি</strong>
+      {% else %}
+    <strong>এই মাসের বেতন আংশিক পরিশোধ হয়েছে</strong>
+      {% endif %}
+    <small>{{ student_fee_current_month_label }}-এর নির্ধারিত বেতন {{ student_fee_current_monthly_fee }} টাকা · জমা {{ student_fee_current_paid }} টাকা · বাকি {{ student_fee_current_due }} টাকা</small>
     {% else %}
-    <strong>এখনো নির্ধারণ করা হয়নি</strong>
-    <small>অ্যাকাউন্ট নির্ধারিত হলে এখানে দেখা যাবে।</small>
+    <strong>এই মাসের বেতন এখনো নির্ধারণ করা হয়নি</strong>
+    <small>অ্যাডমিন বেতন নির্ধারণ করলে এখানে দেখাবে।</small>
     {% endif %}
-  </div>
-  <div class="fee-detail-summary">
-    <div><span>মোট বেতন</span><strong>{{ student_fee_total }} টাকা</strong></div>
-    <div><span>দেওয়া</span><strong>{{ student_fee_paid }} টাকা</strong></div>
-    <div><span>বাকি</span><strong>{{ student_fee_due }} টাকা</strong></div>
   </div>
   {% if student_fee_records %}
   <div class="fee-month-list">
     {% for record in student_fee_records %}
-    <div class="fee-month-item">
+    <div class="fee-month-item {% if record.month == student_fee_current_month and student_fee_up_to_date or record.due_amount == 0 and record.monthly_fee > 0 %}is-paid{% elif record.due_amount %}is-due{% endif %}">
       <div class="fee-month-header">
-        <strong>{{ record.month }}</strong>
-        <span class="fee-month-status {% if record.due_amount %}fee-month-status-due{% else %}fee-month-status-paid{% endif %}">{% if record.due_amount %}বাকি {{ record.due_amount }}{% else %}পরিশোধিত{% endif %}</span>
+        <strong>{{ record.month_label }}</strong>
+        <span class="fee-month-status {% if record.due_amount %}fee-month-status-due{% elif record.monthly_fee > 0 %}fee-month-status-paid{% else %}fee-month-status-unset{% endif %}">
+          {% if record.monthly_fee <= 0 %}বেতন নির্ধারিত হয়নি{% elif record.due_amount and record.amount_paid == 0 %}এই মাসের বেতন পরিশোধ হয়নি{% elif record.due_amount %}আংশিক পরিশোধ · বাকি {{ record.due_amount }} টাকা{% else %}পরিশোধিত · Up to date{% endif %}
+        </span>
       </div>
       <div class="fee-month-metrics">
-        <span>মাসিক বেতন: {{ record.monthly_fee }} টাকা</span>
-        <span>দেওয়া: {{ record.amount_paid }} টাকা</span>
-        <span>বাকি: {{ record.due_amount }} টাকা</span>
+        <span>{{ record.month_label }}-এর বেতন: {{ record.monthly_fee }} টাকা</span>
+        <span>{{ record.month_label }}-এ জমা: {{ record.amount_paid }} টাকা</span>
+        <span>{{ record.month_label }}-এ বাকি: {{ record.due_amount }} টাকা</span>
       </div>
       {% if record.note %}<p>{{ record.note }}</p>{% endif %}
       <small>রেকর্ড: {{ record.updated_at|date:"d M Y, h:i A" }}</small>
+      {% if record.amount_paid > 0 %}
+      <a class="button button-light button-small fee-receipt-download" href="{% url 'student_fee_receipt' record.month %}" download>রসিদ PDF ডাউনলোড</a>
+      {% endif %}
     </div>
     {% endfor %}
   </div>
@@ -56,8 +64,9 @@
   <div class="empty-state compact-empty"><span>₹</span><strong>কোনো বেতন রেকর্ড নেই</strong><p>মাসভিত্তিক বেতন রেকর্ড যোগ হলে এখানে দেখা যাবে।</p></div>
   {% endif %}
 </section>
-<section class="student-next-events" aria-label="পরবর্তী ক্লাস ও পরীক্ষা">
-  {% if next_class %}
+<section class="student-next-events" aria-label="পরবর্তী ক্লাস ও পরীক্ষা" data-student-events-carousel>
+  <div class="student-next-events-track" id="student-next-events-track" data-carousel-track>
+  {% for next_class in next_classes %}
   <article class="student-next-event next-event-class">
     <div class="next-event-heading"><span class="next-event-icon" aria-hidden="true">◷</span><span class="eyebrow">{% if next_class.status == 'running' %}চলমান ক্লাস{% else %}পরবর্তী ক্লাস{% endif %}</span></div>
     <h2>{{ next_class.routine.subject }}{% if next_class.routine.paper %} · {{ next_class.routine.paper }}{% endif %}</h2>
@@ -65,14 +74,14 @@
     <div class="next-event-meta"><strong>{{ next_class.day_label }} · {{ next_class.time_label }}</strong>{% if next_class.routine.chapter %}<span>অধ্যায়: {{ next_class.routine.chapter }}</span>{% endif %}</div>
     <a href="{% url 'student_routine' %}">সম্পূর্ণ রুটিন <span aria-hidden="true">→</span></a>
   </article>
-  {% else %}
+  {% empty %}
   <article class="student-next-event next-event-class next-event-empty">
     <div class="next-event-heading"><span class="next-event-icon" aria-hidden="true">◷</span><span class="eyebrow">পরবর্তী ক্লাস</span></div>
     <h2>এখনো কোনো ক্লাসের রুটিন নেই</h2>
     <p>নতুন ক্লাস যোগ হলে এখানে দেখা যাবে।</p>
     <a href="{% url 'student_routine' %}">সম্পূর্ণ রুটিন <span aria-hidden="true">→</span></a>
   </article>
-  {% endif %}
+  {% endfor %}
   {% if next_exam %}
   <article class="student-next-event next-event-exam">
     <div class="next-event-heading"><span class="next-event-icon" aria-hidden="true">▤</span><span class="eyebrow">পরবর্তী পরীক্ষা</span></div>
@@ -82,12 +91,18 @@
     <a href="{% url 'student_exams' %}">পরীক্ষার বিস্তারিত <span aria-hidden="true">→</span></a>
   </article>
   {% endif %}
+  </div>
 </section>
 <section class="panel student-study-panel" id="todays-study" aria-labelledby="todays-study-title">
   <div class="panel-heading">
-    <div><span class="eyebrow">আজকের পড়া</span><h2 id="todays-study-title">আজকের ক্লাসের পড়া</h2><p class="muted">পড়া শেষ হলে চেক করো। কোনো অংশে সমস্যা হলে নিচে লিখে শিক্ষককে জানাও।</p></div>
+    <div><span class="eyebrow">ক্লাসের পড়া</span><h2 id="todays-study-title">{% if study_date == today %}আজকের ক্লাসের পড়া{% else %}{{ study_date|date:"j F Y" }}-এর ক্লাসের পড়া{% endif %}</h2><p class="muted">পড়া শেষ হলে চেক করো। কোনো অংশে সমস্যা হলে নিচে লিখে শিক্ষককে জানাও। ক্লাসের তারিখ থেকে ৩ দিনের মধ্যে অগ্রগতি জমা দেওয়া যাবে।</p></div>
     {% if today_study_sessions %}<span class="intro-count">{{ today_study_sessions|length }}টি ক্লাস</span>{% endif %}
   </div>
+  <form class="study-date-filter" method="get" action="{% url 'student_dashboard' %}">
+    <label for="study-date">ক্লাসের তারিখ বেছে নাও</label>
+    <input id="study-date" type="date" name="study_date" value="{{ study_date|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}">
+    <button class="button button-light button-small" type="submit">পড়া দেখো</button>
+  </form>
   {% if today_study_sessions %}
   <div class="student-study-list">
     {% for item in today_study_sessions %}
@@ -121,7 +136,7 @@
             <label class="study-problem-label" for="study-problem-{{ item.session.pk }}">কোনো সমস্যা হলে জানাও <span>(ঐচ্ছিক)</span></label>
             <textarea id="study-problem-{{ item.session.pk }}" name="problem_description" rows="3" maxlength="1500" placeholder="কোন অংশ বুঝতে সমস্যা হয়েছে?"{% if not item.can_submit %} readonly{% endif %}>{{ item.progress.problem_description|default:'' }}</textarea>
             <div class="student-study-actions">
-              {% if item.progress %}<small>সর্বশেষ আপডেট: {{ item.progress.updated_at|date:"g:i A" }}</small>{% else %}<small>এখনো অগ্রগতি জানাওনি</small>{% endif %}
+              {% if item.progress %}<small>সর্বশেষ আপডেট: {{ item.progress.updated_at|date:"d M, g:i A" }}</small>{% else %}<small>এখনো অগ্রগতি জানাওনি</small>{% endif %}
               {% if item.can_submit %}
               <button class="button button-primary button-small" type="submit">অগ্রগতি সংরক্ষণ</button>
               {% else %}
@@ -135,7 +150,7 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-state compact-empty"><span>✓</span><strong>আজকের পড়া এখনো যোগ হয়নি</strong><p>শিক্ষক পরিচালিত ক্লাসের তথ্য যোগ করলে তা এখানে চেকলিস্ট হিসেবে দেখা যাবে।</p></div>
+  <div class="empty-state compact-empty"><span>✓</span><strong>{% if study_date == today %}আজকের পড়া এখনো যোগ হয়নি{% else %}এই তারিখে কোনো ক্লাসের পড়া যোগ হয়নি{% endif %}</strong><p>শিক্ষক পরিচালিত ক্লাসের তথ্য যোগ করলে তা এখানে চেকলিস্ট হিসেবে দেখা যাবে।</p></div>
   {% endif %}
 </section>
 <section class="panel tomorrow-classes-panel" aria-labelledby="tomorrow-classes-title">

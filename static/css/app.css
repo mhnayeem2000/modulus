@@ -77,7 +77,7 @@ button { cursor: pointer; }
 .welcome-date small { margin-top: 1px; color: #98a2b3; font-size: 11px; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 15px; margin: 20px 0; }
-.stat-card, .panel { border: 1px solid #edf0f5; border-radius: 15px; background: var(--surface); box-shadow: 0 3px 15px #202e4a05; }
+.stat-card, .panel { border: 1px solid #edf0f5; border-radius: 15px; background: radial-gradient(ellipse at 100% 0, #f0f3ff 0, transparent 48%), linear-gradient(125deg, #fff, #f8f9ff); box-shadow: 0 3px 15px #202e4a05; }
 .stat-card { min-height: 136px; padding: 17px 18px; }
 .stat-top { display: flex; align-items: center; gap: 9px; }
 .stat-icon { display: grid; place-items: center; width: 33px; height: 33px; border-radius: 10px; font-size: 18px; }
@@ -581,6 +581,7 @@ body { font-size: 16px; }
 
 .student-welcome { background: radial-gradient(ellipse at 91% 25%, #dff1ed 0, transparent 36%), linear-gradient(105deg, #fff 15%, #f4faf8 100%); border-color: #e5f0ec; }
 .student-next-events { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; margin: 14px 0; }
+.student-next-events-track { display: contents; }
 .student-next-event { position: relative; display: grid; align-content: start; gap: 7px; min-width: 0; padding: 16px 18px; overflow: hidden; border: 1px solid #dcebe5; border-radius: 15px; background: radial-gradient(ellipse at 100% 0, #e6f5ed 0, transparent 45%), linear-gradient(125deg, #fff, #f6fbf8); box-shadow: 0 6px 20px #202e4a0a; }
 .student-next-event::before { position: absolute; top: 0; bottom: 0; left: 0; width: 3px; background: #25936d; content: ""; }
 .next-event-heading { display: flex; align-items: center; gap: 8px; }
@@ -913,7 +914,7 @@ body { font-size: 16px; }
 .planner-conflicts ul { margin: 6px 0 0; padding-left: 19px; }
 .planner-conflicts li + li { margin-top: 4px; }
 .planner-schedule-panel { padding: 22px; }
-.planner-unplaced-panel { margin-bottom: 14px; padding: 18px; border-color: #f0dcb9; background: #fffdf8; }
+.planner-unplaced-panel { margin-bottom: 14px; padding: 18px; border-color: #f0dcb9; background: radial-gradient(ellipse at 100% 0, #fff4dc 0, transparent 48%), linear-gradient(125deg, #fffefa, #fffaf0); }
 .planner-unplaced-panel h2 { margin: 3px 0; color: #6d5738; font-size: 16px; }
 .planner-unplaced-panel > div:first-child > p { margin: 2px 0 12px; }
 .planner-unplaced-task { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 12px 0 0; border-top: 1px solid #f0e6d4; }
@@ -1109,7 +1110,7 @@ body { font-size: 16px; }
 .topic-in_progress { color: #5061c7; background: #edf0ff; }
 .topic-not_started { color: #a16b25; background: #fff4e5; }
 .planner-question-list { display: grid; gap: 12px; margin: 18px 0 0; padding-left: 24px; }
-.planner-question-list li { padding-left: 4px; color: #48566e; line-height: 1.7; }
+.planner-question-list li { padding-left: 4px; color: #48566e; font-size: 16px; font-weight: 400; line-height: 1.85; }
 .planner-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 18px; }
 .planner-pagination > span { color: #718097; font-size: 12px; font-weight: 600; }
 
@@ -1137,7 +1138,7 @@ body { font-size: 16px; }
 :root[data-theme="dark"] .planner-history-week,
 :root[data-theme="dark"] .planner-regenerate,
 :root[data-theme="dark"] .planner-teacher-form-panel,
-:root[data-theme="dark"] .planner-teacher-assignment-panel { border-color: #343e53; color: #c5cde0; background: #202a3b; }
+:root[data-theme="dark"] .planner-teacher-assignment-panel { border-color: #343e53; color: #c5cde0; background: radial-gradient(ellipse at 100% 0, #2c354c 0, transparent 48%), linear-gradient(125deg, #202a3b, #252f45); }
 :root[data-theme="dark"] .planner-day-heading,
 :root[data-theme="dark"] .planner-task-more[open],
 :root[data-theme="dark"] .planner-history-tasks > div,
@@ -1249,7 +1250,9 @@ body { font-size: 16px; }
   .floating-reminder { right: 16px; bottom: 16px; }
 }
 @media (max-width: 560px) {
-  .student-next-events { grid-template-columns: minmax(0, 1fr); gap: 9px; margin: 11px 0; }
+  .student-next-events { display: block; overflow: hidden; margin: 11px 0; }
+  .student-next-events-track { position: relative; display: flex; gap: 9px; width: 100%; transition: transform .55s ease-in-out; will-change: transform; }
+  .student-next-events-track > .student-next-event { flex: 0 0 100%; }
   .student-next-event { gap: 6px; padding: 13px 14px; }
   .student-next-event h2 { font-size: 16px; }
   .student-next-event > p { font-size: 12px; }
@@ -1360,11 +1363,11 @@ body { font-size: 17px; }
 }
 :root[data-theme="dark"] body { color: var(--ink); background: var(--page); }
 :root[data-theme="dark"] .sidebar,
-:root[data-theme="dark"] .panel,
-:root[data-theme="dark"] .stat-card,
 :root[data-theme="dark"] .priority-card,
 :root[data-theme="dark"] .floating-reminder,
 :root[data-theme="dark"] .student-shortcut { border-color: var(--line); background: var(--surface); color: var(--ink); box-shadow: 0 4px 18px #0002; }
+:root[data-theme="dark"] .panel,
+:root[data-theme="dark"] .stat-card { border-color: var(--line); background: radial-gradient(ellipse at 100% 0, #2c354c 0, transparent 48%), linear-gradient(125deg, #202a3b, #252f45); color: var(--ink); box-shadow: 0 4px 18px #0002; }
 :root[data-theme="dark"] .topbar { border-color: var(--line); background: #1b2433ed; }
 :root[data-theme="dark"] .welcome-banner,
 :root[data-theme="dark"] .admin-welcome,
@@ -1539,13 +1542,15 @@ body { font-size: 17px; }
 .practice-question { padding: 12px; border: 1px solid #edf0f5; border-left: 3px solid #cbd1df; border-radius: 10px; background: #fff; }
 .practice-question.is-practiced { border-left-color: #20a786; background: #fbfffd; }
 .practice-question.needs-help { border-left-color: #df8190; background: #fffdfd; }
-.practice-question > header { display: flex; align-items: flex-start; gap: 9px; color: #45526b; font-size: 12px; line-height: 1.65; }
+.practice-question > header { display: flex; align-items: flex-start; gap: 9px; color: #45526b; font-size: 15px; line-height: 1.8; }
+.practice-question > header > div { min-width: 0; }
+.practice-question > header strong { font-weight: 400; }
 .practice-question-number { display: grid; flex: 0 0 24px; place-items: center; width: 24px; height: 24px; border-radius: 8px; color: #5a66d2; background: #eff0ff; font: 650 10px Inter, sans-serif; }
-.practice-mcq-choices { display: grid; gap: 5px; margin: 9px 0 0 32px; padding-left: 21px; color: #647087; font-size: 11px; line-height: 1.55; }
-.practice-answer { margin: 9px 0 0 32px; color: #161b26; font-size: 15px; }
-.practice-answer > summary { width: fit-content; color: #4b55ad; cursor: pointer; font-size: 14px; font-weight: 700; }
-.practice-answer p { margin: 8px 0 0; color: #161b26; font-size: 15px; font-weight: 500; line-height: 1.75; }
-.practice-answer p strong { color: #090d14; font-weight: 750; }
+.practice-mcq-choices { display: grid; gap: 7px; margin: 11px 0 0 32px; padding-left: 21px; color: #647087; font-size: 15px; line-height: 1.75; }
+.practice-answer { margin: 11px 0 0 32px; color: #3d4960; font-size: 16px; line-height: 1.85; }
+.practice-answer > summary { width: fit-content; color: #4b55ad; cursor: pointer; font-size: 15px; font-weight: 500; }
+.practice-answer p { margin: 10px 0 0; color: #3d4960; font-size: 16px; font-weight: 400; line-height: 1.9; }
+.practice-answer-label { color: #3d4960; font-weight: 400; }
 .practice-question-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin: 10px 0 0 32px; }
 .practice-status-button { min-height: 27px; padding: 3px 8px; border: 1px solid #e6eaf1; border-radius: 7px; color: #778399; background: #fff; font: inherit; font-size: 9px; cursor: pointer; }
 .practice-status-button.active { border-color: #b8e5d2; color: #16845f; background: #effaf5; }
@@ -1561,11 +1566,11 @@ body { font-size: 17px; }
 @keyframes practice-spin { to { transform: rotate(360deg); } }
 .practice-recommendation-output { margin-top: 12px; }
 .practice-recommendation-result { padding: 14px; border: 1px solid #e8ebf2; border-radius: 10px; background: #fff; }
-.practice-recommendation-result h3 { margin: 0 0 11px; color: #39465f; font-size: 15px; }
+.practice-recommendation-result h3 { margin: 0 0 11px; color: #39465f; font-size: 17px; font-weight: 500; }
 .practice-recommendation-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .practice-recommendation-columns section { min-width: 0; padding: 12px; border: 1px solid #edf0f5; border-radius: 9px; }
-.practice-recommendation-columns h4 { margin: 0; color: #4b55ad; font-size: 13px; }
-.practice-recommendation-columns ol { display: grid; gap: 7px; margin: 9px 0 0; padding-left: 22px; color: #273248; font-size: 14px; line-height: 1.6; }
+.practice-recommendation-columns h4 { margin: 0; color: #4b55ad; font-size: 15px; font-weight: 500; }
+.practice-recommendation-columns ol { display: grid; gap: 8px; margin: 10px 0 0; padding-left: 22px; color: #3d4960; font-size: 15px; font-weight: 400; line-height: 1.8; }
 .practice-filter { display: flex; align-items: end; flex-wrap: wrap; gap: 9px; margin: 0 0 13px; }
 .practice-filter label { min-width: 150px; }
 .practice-filter input, .practice-filter select { min-height: 35px; font-size: 11px; }
@@ -1594,7 +1599,9 @@ body { font-size: 17px; }
 :root[data-theme="dark"] .practice-mcq-choices,
 :root[data-theme="dark"] .practice-answer { color: #b8c2d3; }
 :root[data-theme="dark"] .practice-answer p,
-:root[data-theme="dark"] .practice-answer p strong { color: #e1e7f0; }
+:root[data-theme="dark"] .practice-answer-label { color: #e1e7f0; }
+:root[data-theme="dark"] .practice-answer { color: #d0d8e6; }
+:root[data-theme="dark"] .practice-recommendation-columns ol { color: #d0d8e6; }
 :root[data-theme="dark"] .practice-loading { border-color: #414b6a; color: #e0e5ff; background: #252e43; }
 :root[data-theme="dark"] .practice-loading small { color: #bac4d8; }
 :root[data-theme="dark"] .practice-loading-spinner { border-color: #4b5573; border-top-color: #aaa5ff; }
@@ -1717,6 +1724,9 @@ body { font-size: 17px; }
   .button-small { font-size: 13px; }
   .theme-toggle { width: 36px; height: 36px; }
 }
+@media (max-width: 560px) and (prefers-reduced-motion: reduce) {
+  .student-next-events-track { transition: none; }
+}
 
 .teacher-next-class-float { position: fixed; top: 94px; right: 27px; z-index: 8; display: flex; align-items: center; gap: 12px; width: min(440px, calc(100vw - 290px)); padding: 14px 43px 14px 14px; border: 1px solid #dbe3fb; border-radius: 15px; color: #27334c; background: linear-gradient(120deg, #fff 10%, #f3f6ff 100%); box-shadow: 0 13px 38px #28365a24; animation: teacher-notice-appear .35s ease-out; }
 .teacher-next-class-icon { display: grid; place-items: center; flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; color: #5368d9; background: #e8edff; font-size: 21px; }
@@ -1791,7 +1801,7 @@ body { font-size: 17px; }
 .student-profile-back:hover { text-decoration: underline; }
 .student-profile-avatar { display: grid; place-items: center; flex: 0 0 auto; width: 72px; height: 72px; border-radius: 22px; color: #5268d2; background: #e8edff; font-size: 30px; font-weight: 700; }
 .student-profile-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
-.student-profile-stat, .student-profile-panel { min-width: 0; padding: 20px; border: 1px solid #e7eaf1; border-radius: 17px; background: #fff; box-shadow: 0 8px 24px #28365a0a; }
+.student-profile-stat, .student-profile-panel { min-width: 0; padding: 20px; border: 1px solid #e7eaf1; border-radius: 17px; background: radial-gradient(ellipse at 100% 0, #f0f3ff 0, transparent 48%), linear-gradient(125deg, #fff, #f8f9ff); box-shadow: 0 8px 24px #28365a0a; }
 .student-profile-stat { display: grid; align-content: start; gap: 7px; }
 .student-profile-stat > span { color: #778298; font-size: 13px; font-weight: 600; }
 .student-profile-stat strong { color: #2f3f61; font-size: 30px; line-height: 1; }
@@ -1858,7 +1868,7 @@ body { font-size: 17px; }
 .student-exam-result > b span { color: #9099aa; font-size: 12px; font-weight: 500; }
 :root[data-theme="dark"] .student-profile-header,
 :root[data-theme="dark"] .student-profile-stat,
-:root[data-theme="dark"] .student-profile-panel { border-color: #30394a; background: #202a39; box-shadow: none; }
+:root[data-theme="dark"] .student-profile-stat, :root[data-theme="dark"] .student-profile-panel { border-color: #30394a; background: radial-gradient(ellipse at 100% 0, #2c354c 0, transparent 48%), linear-gradient(125deg, #202a3b, #252f45); box-shadow: none; }
 :root[data-theme="dark"] .student-profile-header h1,
 :root[data-theme="dark"] .student-profile-section-heading h2,
 :root[data-theme="dark"] .student-profile-stat strong { color: #e0e7f4; }
@@ -2279,6 +2289,12 @@ body { font-size: 17px; }
 }
 
 .student-study-panel, .study-progress-panel { margin: 0 0 17px; }
+.study-date-filter { display: flex; flex-wrap: wrap; align-items: end; gap: 9px; margin-top: 14px; padding: 12px; border: 1px solid #e9edf4; border-radius: 11px; background: #f8f9fc; }
+.study-date-filter label { color: #647087; font-size: 11px; font-weight: 600; }
+.study-date-filter input { min-height: 37px; padding: 6px 9px; border: 1px solid #dfe4ee; border-radius: 8px; color: #39465e; background: #fff; font: inherit; font-size: 12px; }
+.session-study-link { color: inherit; text-decoration: none; }
+.session-study-link:hover .session-study-link-label { color: var(--primary); }
+.session-study-link-label { flex: 0 0 auto; color: #778399; font-size: 11px; font-weight: 600; }
 .study-progress-filter { display: flex; flex-wrap: wrap; align-items: end; gap: 9px; margin-top: 14px; padding: 12px; border: 1px solid #e9edf4; border-radius: 11px; background: #f8f9fc; }
 .study-progress-filter label { color: #647087; font-size: 11px; font-weight: 600; }
 .study-progress-filter input { min-height: 37px; padding: 6px 9px; border: 1px solid #dfe4ee; border-radius: 8px; color: #39465e; background: #fff; font: inherit; font-size: 12px; }
@@ -2338,6 +2354,10 @@ body { font-size: 17px; }
 :root[data-theme="dark"] .study-year-empty strong { color: #edf1fb; }
 :root[data-theme="dark"] .study-year-empty p { color: #b1bbcf; }
 :root[data-theme="dark"] .study-progress-filter { border-color: #3b465d; background: #1b2434; }
+:root[data-theme="dark"] .study-date-filter { border-color: #3b465d; background: #1b2434; }
+:root[data-theme="dark"] .study-date-filter label { color: #b1bbcf; }
+:root[data-theme="dark"] .study-date-filter input { border-color: #46516a; color: #edf1fb; background: #202a3b; }
+:root[data-theme="dark"] .session-study-link-label { color: #b1bbcf; }
 :root[data-theme="dark"] .study-progress-filter label { color: #b1bbcf; }
 :root[data-theme="dark"] .study-progress-filter input { border-color: #46516a; color: #edf1fb; background: #202a3b; }
 :root[data-theme="dark"] .study-progress-pagination { border-color: #3b465d; }
@@ -2810,6 +2830,7 @@ html, body { max-width: 100%; overflow-x: clip; }
 .fee-status { min-width: 78px; }
 .fee-status-due { color: #a15d0d; background: #fff4e8; }
 .fee-status-updated { color: #0d825a; background: #ebfaf3; }
+.fee-status-unset { color: #667085; background: #f0f2f5; }
 .fee-detail-panel { padding: 0 18px 18px; border-top: 1px solid #eff1f5; }
 .fee-detail-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 14px 0; }
 .fee-detail-summary > div { display: grid; gap: 4px; padding: 12px; border: 1px solid #edf0f7; border-radius: 11px; background: #fafbff; }
@@ -2822,14 +2843,16 @@ html, body { max-width: 100%; overflow-x: clip; }
 .fee-month-status { display: inline-flex; align-items: center; padding: 5px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
 .fee-month-status-due { color: #a15d0d; background: #fff4e8; }
 .fee-month-status-paid { color: #0d825a; background: #ebfaf3; }
+.fee-month-status-unset { color: #667085; background: #f0f2f5; }
 .fee-month-metrics { display: flex; flex-wrap: wrap; gap: 12px; color: #6d7a8d; font-size: 12px; margin-top: 9px; }
 .fee-month-item p { margin: 9px 0 0; color: #5d6a80; font-size: 12px; }
 .fee-month-item small { display: block; margin-top: 7px; color: #8d98ab; font-size: 11px; }
+.fee-receipt-download { display: inline-flex; width: fit-content; margin-top: 9px; }
 .pagination-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; color: #6b788d; font-size: 12px; }
 .fee-item-due { border-color: #f4d7b2; background: linear-gradient(180deg, #fffdf9 0%, #ffffff 100%); }
-.fee-item-clear { border-color: #dfeef2; background: linear-gradient(180deg, #fafeff 0%, #ffffff 100%); }
+.fee-item-clear { border-color: #bfe8d7; background: linear-gradient(180deg, #f0fbf5 0%, #ffffff 100%); }
 .fee-overview-panel { margin: 20px 0; }
-.fee-overview-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.fee-overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 12px; margin-top: 18px; }
 .fee-overview-card { display: grid; align-content: space-between; gap: 8px; min-height: 125px; padding: 16px; border: 1px solid #edf0f5; border-radius: 13px; background: linear-gradient(145deg, #fff, #fbfcff); }
 .fee-overview-card > span { color: #758198; font-size: 12px; }
 .fee-overview-card > strong { overflow-wrap: anywhere; color: #27334c; font: 700 clamp(20px, 2.2vw, 27px) Inter, "Noto Sans Bengali", sans-serif; letter-spacing: -.6px; }
@@ -2844,6 +2867,14 @@ html, body { max-width: 100%; overflow-x: clip; }
 :root[data-theme="dark"] .fee-overview-panel .fee-overview-card > small { color: #b1bbcf; }
 :root[data-theme="dark"] .fee-overview-panel .fee-overview-card > strong { color: #edf1fb; }
 .fee-accounts-welcome { margin-bottom: 18px; }
+.fee-calendar-toolbar { display: grid; grid-template-columns: minmax(190px, 1.2fr) repeat(2, minmax(170px, 1fr)) auto auto; align-items: end; gap: 10px; margin: 18px 0 0; padding: 14px; border: 1px solid #e7eaf3; border-radius: 14px; background: linear-gradient(135deg, #f8f9ff, #fff); }
+.fee-calendar-toolbar > label { display: grid; gap: 6px; min-width: 0; color: #64718a; font-size: 11px; font-weight: 600; }
+.fee-calendar-toolbar input, .fee-calendar-toolbar select { width: 100%; min-width: 0; min-height: 44px; padding: 9px 11px; border: 1px solid #dfe5f0; border-radius: 10px; color: var(--ink); background-color: #fff; font: inherit; }
+.fee-calendar-toolbar .button { min-height: 44px; white-space: nowrap; }
+.fee-month-estimate-grid.fee-overall-estimate-grid,
+.fee-month-estimate-grid.fee-selected-month-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fee-overall-estimate-grid + .fee-calendar-toolbar { margin-top: 4px; }
+.fee-calendar-toolbar + .fee-month-estimate-grid { margin-top: 14px; }
 .fee-entry-form-wide { margin-top: 16px; }
 .fee-accounts-toolbar { justify-content: flex-start; margin-top: 18px; }
 .fee-accounts-toolbar > label:not(.fee-filter-check) { min-width: 190px; }
@@ -2860,8 +2891,17 @@ html, body { max-width: 100%; overflow-x: clip; }
 .fee-month-estimate-card > small { color: #8c97aa; font-size: 11px; line-height: 1.5; }
 .fee-month-estimate-card.is-due { border-color: #f2dfc8; background: linear-gradient(135deg, #fff8ee, #fff); }
 .fee-month-estimate-card.is-due > span { color: #a15d0d; }
-.fee-student-account { padding: 15px; }
+.fee-student-account { padding: 0; }
 .fee-student-summary { display: grid; grid-template-columns: minmax(210px, 1fr) auto minmax(235px, .9fr); align-items: center; gap: 14px; }
+.fee-student-account > .fee-student-summary { display: grid; grid-template-columns: minmax(140px, .8fr) minmax(0, 1.6fr) auto; }
+.fee-student-collapsed-status { display: flex; flex-wrap: nowrap; justify-self: end; justify-content: flex-end; align-items: center; gap: 8px; width: 100%; min-width: 0; overflow-x: auto; text-align: right; scrollbar-width: thin; }
+.fee-student-collapsed-status > * { flex: 0 0 auto; white-space: nowrap; text-align: right; }
+.fee-expand-indicator { display: grid; place-items: center; flex: 0 0 32px; width: 32px; height: 32px; border: 1px solid #e5e9f3; border-radius: 10px; color: #6472dc; transition: transform .2s ease, background-color .2s ease; }
+.fee-expand-indicator svg { display: block; width: 18px; height: 18px; max-width: 100%; }
+.fee-student-account[open] .fee-expand-indicator { background: #f3f5ff; }
+.fee-student-account[open] .fee-expand-indicator { transform: rotate(180deg); }
+.fee-student-expanded { padding: 0 18px 18px; }
+.fee-expanded-month-heading { margin: 16px 0 0; color: #31405b; font-size: 14px; }
 .fee-inline-month-form { display: grid; grid-template-columns: 1fr minmax(115px, .7fr) auto; align-items: center; gap: 8px; }
 .fee-inline-month-form > label { color: #58657d; font-size: 11px; font-weight: 600; }
 .fee-inline-input input { width: 100%; min-height: 38px; padding: 7px 9px; border: 1px solid #dfe6f2; border-radius: 8px; color: var(--ink); background: #fff; }
@@ -2872,10 +2912,14 @@ html, body { max-width: 100%; overflow-x: clip; }
 .fee-history-details[open] > summary { border-bottom: 1px solid #eff1f5; background: #fcfcff; }
 .fee-history-details .fee-detail-panel { border-top: 0; }
 .student-current-fee { display: grid; gap: 4px; margin: 16px 0; padding: 14px 16px; border: 1px solid #dfe6ff; border-radius: 12px; background: linear-gradient(135deg, #f6f7ff, #fff); }
+.student-current-fee.is-paid { border-color: #bfe8d7; background: linear-gradient(135deg, #eaf9f1, #fff); }
+.student-current-fee.is-due { border-color: #f2dfc8; background: linear-gradient(135deg, #fff8ee, #fff); }
+.fee-month-item.is-paid { border-color: #bfe8d7; background: linear-gradient(135deg, #eaf9f1, #fff); }
+.fee-month-item.is-due { border-color: #f2dfc8; background: linear-gradient(135deg, #fff8ee, #fff); }
 .student-current-fee > span { color: #6573d9; font-size: 12px; font-weight: 600; }
 .student-current-fee > strong { color: #293651; font-size: 21px; }
 .student-current-fee > small { color: #8792a6; font-size: 11px; }
-:root[data-theme="dark"] .fee-panel { border-color: var(--line); background: var(--surface); color: var(--ink); }
+:root[data-theme="dark"] .fee-panel { border-color: var(--line); background: radial-gradient(ellipse at 100% 0, #2c354c 0, transparent 48%), linear-gradient(125deg, #202a3b, #252f45); color: var(--ink); }
 :root[data-theme="dark"] .fee-panel .panel-heading h2,
 :root[data-theme="dark"] .fee-panel .fee-student-main strong,
 :root[data-theme="dark"] .fee-panel .fee-detail-summary strong,
@@ -2885,12 +2929,15 @@ html, body { max-width: 100%; overflow-x: clip; }
 :root[data-theme="dark"] .fee-panel .fee-toolbar label,
 :root[data-theme="dark"] .fee-panel .fee-inline-month-form > label { color: #b1bbcf; }
 :root[data-theme="dark"] .fee-panel .fee-entry-form,
-:root[data-theme="dark"] .fee-panel .fee-toolbar { border-color: #3b465d; background: #1b2536; }
+:root[data-theme="dark"] .fee-panel .fee-toolbar,
+:root[data-theme="dark"] .fee-panel .fee-calendar-toolbar { border-color: #3b465d; background: #1b2536; }
 :root[data-theme="dark"] .fee-panel .fee-form-grid input,
 :root[data-theme="dark"] .fee-panel .fee-form-grid select,
 :root[data-theme="dark"] .fee-panel .fee-form-grid textarea,
 :root[data-theme="dark"] .fee-panel .fee-inline-input input,
-:root[data-theme="dark"] .fee-panel .fee-toolbar select {
+:root[data-theme="dark"] .fee-panel .fee-toolbar select,
+:root[data-theme="dark"] .fee-panel .fee-calendar-toolbar input,
+:root[data-theme="dark"] .fee-panel .fee-calendar-toolbar select {
   border-color: #45516a;
   color: #edf1fb;
   background-color: #192333;
@@ -2903,6 +2950,7 @@ html, body { max-width: 100%; overflow-x: clip; }
 :root[data-theme="dark"] .fee-panel .fee-month-estimate-card.is-due { border-color: #594a3b; background: linear-gradient(135deg, #332d27, #202a3b); }
 :root[data-theme="dark"] .fee-panel .fee-month-estimate-card > span { color: #aeb9ff; }
 :root[data-theme="dark"] .fee-panel .fee-month-estimate-card.is-due > span { color: #edbd83; }
+:root[data-theme="dark"] .fee-panel .fee-calendar-toolbar > label { color: #b1bbcf; }
 :root[data-theme="dark"] .fee-panel .fee-month-estimate-card > strong,
 :root[data-theme="dark"] .fee-panel .fee-student-main small,
 :root[data-theme="dark"] .fee-panel .fee-detail-summary span,
@@ -2933,22 +2981,48 @@ html, body { max-width: 100%; overflow-x: clip; }
 :root[data-theme="dark"] .fee-summary-panel .fee-month-status-due { color: #ffd09c; background: #3d3026; }
 :root[data-theme="dark"] .fee-summary-panel .fee-status-updated,
 :root[data-theme="dark"] .fee-summary-panel .fee-month-status-paid { color: #9ce3cc; background: #203d34; }
+:root[data-theme="dark"] .fee-summary-panel .fee-status-unset { color: #c0c7d4; background: #30394b; }
+:root[data-theme="dark"] .fee-summary-panel .fee-month-status-unset { color: #c0c7d4; background: #30394b; }
+:root[data-theme="dark"] .fee-summary-panel .student-current-fee.is-paid,
+:root[data-theme="dark"] .fee-summary-panel .fee-month-item.is-paid { border-color: #32644f; background: linear-gradient(135deg, #203d34, #1b2536); }
+:root[data-theme="dark"] .fee-summary-panel .student-current-fee.is-due,
+:root[data-theme="dark"] .fee-summary-panel .fee-month-item.is-due { border-color: #594a3b; background: linear-gradient(135deg, #332d27, #1b2536); }
 @media (max-width: 960px) {
   .fee-layout { grid-template-columns: 1fr; }
   .fee-toolbar { flex-direction: column; align-items: stretch; }
   .fee-summary-mini { justify-content: flex-start; }
   .fee-overview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .fee-student-summary { grid-template-columns: 1fr; }
+  .fee-student-account > .fee-student-summary { grid-template-columns: minmax(120px, .7fr) minmax(0, 1.5fr) auto; }
   .fee-inline-month-form { grid-template-columns: 1fr minmax(120px, .5fr) auto; }
 }
 @media (max-width: 620px) {
   .fee-form-grid { grid-template-columns: 1fr; }
-  .fee-student-item summary { flex-direction: column; align-items: stretch; }
+  .fee-student-account > .fee-student-summary { display: grid; grid-template-columns: minmax(0, .65fr) minmax(0, 1.35fr) 28px; align-items: center; gap: 8px; padding: 12px; }
+  .fee-student-account .fee-student-collapsed-status { display: flex; grid-column: 2; justify-content: flex-end; text-align: right; overflow: visible; }
+  .fee-student-account .fee-student-collapsed-status > :not(.fee-status) { display: none; }
+  .fee-student-account .fee-student-collapsed-status > .fee-month-unset-label { display: none; }
+  .fee-student-account .fee-student-collapsed-status > .fee-status { min-width: 0; padding: 6px 9px; }
+  .fee-student-account .fee-expand-indicator { grid-column: 3; grid-row: 1; flex-basis: 28px; width: 28px; height: 28px; border-radius: 8px; }
+  .fee-student-account .fee-expand-indicator svg { width: 16px; height: 16px; }
   .fee-student-amounts { justify-content: flex-start; }
   .fee-detail-summary { grid-template-columns: 1fr; }
   .fee-month-header { flex-direction: column; align-items: flex-start; }
   .fee-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .fee-month-estimate-grid { grid-template-columns: 1fr; }
+  .fee-selected-month-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .fee-selected-month-grid .fee-month-estimate-card { min-width: 0; min-height: 112px; padding: 10px 8px; }
+  .fee-selected-month-grid .fee-month-estimate-card > span { font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+  .fee-selected-month-grid .fee-month-estimate-card > strong { font-size: clamp(14px, 4.4vw, 19px); overflow-wrap: anywhere; }
+  .fee-selected-month-grid .fee-month-estimate-card > small { font-size: 9px; line-height: 1.4; overflow-wrap: anywhere; }
+  .fee-overall-estimate-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .fee-overall-estimate-grid .fee-month-estimate-card { min-width: 0; min-height: 112px; padding: 10px 8px; }
+  .fee-overall-estimate-grid .fee-month-estimate-card > span { font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+  .fee-overall-estimate-grid .fee-month-estimate-card > strong { font-size: clamp(14px, 4.4vw, 19px); overflow-wrap: anywhere; }
+  .fee-overall-estimate-grid .fee-month-estimate-card > small { font-size: 9px; line-height: 1.4; overflow-wrap: anywhere; }
+  .fee-calendar-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin: 14px -2px 0; padding: 12px; border-radius: 13px; }
+  .fee-calendar-toolbar .fee-calendar-month { grid-column: 1 / -1; }
+  .fee-calendar-toolbar .button { width: 100%; }
   .fee-overview-card { min-height: 110px; padding: 13px; }
   .fee-accounts-toolbar { align-items: stretch; }
   .fee-accounts-toolbar > label:not(.fee-filter-check) { min-width: 0; }
@@ -2956,6 +3030,15 @@ html, body { max-width: 100%; overflow-x: clip; }
   .fee-inline-month-form { grid-template-columns: 1fr; }
   .fee-inline-month-form .button { width: 100%; }
   .pagination-row { flex-wrap: wrap; }
+  .fee-student-account { border-radius: 15px; }
+  .fee-student-account > .fee-student-summary { grid-template-columns: minmax(0, .55fr) minmax(0, 1.45fr) 26px; gap: 6px; padding: 10px; }
+  .fee-student-summary { gap: 12px; }
+  .fee-student-account .fee-expand-indicator { flex-basis: 26px; width: 26px; height: 26px; }
+  .fee-student-account .fee-expand-indicator svg { width: 14px; height: 14px; }
+  .fee-student-amounts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .fee-student-amounts .fee-status { grid-column: 1 / -1; justify-self: start; }
+  .fee-student-expanded { padding: 0 12px 12px; }
+  .fee-inline-month-form { padding: 11px; border-radius: 12px; background: #f7f8fc; }
 }
 @media (max-width: 380px) {
   .fee-overview-grid { grid-template-columns: 1fr; }
@@ -3188,6 +3271,7 @@ body { background: var(--page); }
 .panel, .stat-card {
   border-color: #e8ecf3;
   border-radius: 17px;
+  background: radial-gradient(ellipse at 100% 0, #f0f3ff 0, transparent 48%), linear-gradient(125deg, #fff, #f8f9ff);
   box-shadow: 0 5px 20px #24325508;
 }
 .panel { padding: 22px; }

@@ -1,12 +1,20 @@
 from django import forms
+from django.contrib.auth import get_user_model
 
 from portal.curriculum import SUBJECT_CHOICES
 from portal.form_fields import configure_curriculum_fields
 from portal.year_groups import BATCH_LABELS
+from portal.models import UserProfile
 from .models import Exam
 
 
 class ExamForm(forms.ModelForm):
+    assigned_teacher = forms.ModelChoiceField(
+        label='পরীক্ষা নেওয়া শিক্ষক',
+        queryset=get_user_model().objects.none(),
+        empty_label='শিক্ষক নির্বাচন করুন',
+        required=False,
+    )
     subject = forms.ChoiceField(
         label='বিষয়',
         choices=[('', 'বিষয় নির্বাচন করুন'), *SUBJECT_CHOICES],
@@ -15,7 +23,10 @@ class ExamForm(forms.ModelForm):
 
     class Meta:
         model = Exam
-        fields = ['title', 'exam_date', 'year_group', 'subject', 'paper', 'chapter', 'topic', 'total_marks']
+        fields = [
+            'title', 'exam_date', 'year_group', 'subject', 'paper', 'chapter', 'topic',
+            'total_marks', 'assigned_teacher',
+        ]
         widgets = {
             'exam_date': forms.DateInput(attrs={'type': 'date'}),
             'title': forms.TextInput(attrs={'placeholder': 'যেমন: সাপ্তাহিক পরীক্ষা ০৩'}),
@@ -24,8 +35,20 @@ class ExamForm(forms.ModelForm):
             'topic': forms.TextInput(attrs={'placeholder': 'যেমন: ডট ও ক্রস গুণন'}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        teacher_queryset = get_user_model().objects.filter(
+            profile__role=UserProfile.Role.TEACHER,
+        ).order_by('first_name', 'last_name', 'username')
+        if user is not None and not user.is_superuser:
+            self.fields['assigned_teacher'].queryset = teacher_queryset.filter(pk=user.pk)
+            self.fields['assigned_teacher'].initial = user
+            self.fields['assigned_teacher'].disabled = True
+        elif user is not None:
+            self.fields['assigned_teacher'].queryset = teacher_queryset
+            self.fields['assigned_teacher'].required = True
+        else:
+            self.fields['assigned_teacher'].queryset = teacher_queryset
         configure_curriculum_fields(self)
 
     def save(self, commit=True):

@@ -324,10 +324,10 @@ def teacher_dashboard(request):
             day_events.append(calendar_class_event(next_routine, 'upcoming'))
 
     for exam in Exam.objects.filter(
-        created_by=request.user,
+        Q(created_by=request.user) | Q(assigned_teacher=request.user),
         exam_date__gte=calendar_month,
         exam_date__lt=calendar_month_end,
-    ).order_by('exam_date', 'created_at'):
+    ).distinct().order_by('exam_date', 'created_at'):
         calendar_events_by_date.setdefault(exam.exam_date, []).append({
             'event_type': 'exam',
             'title': exam.title,
@@ -388,8 +388,9 @@ def teacher_dashboard(request):
     else:
         next_month = today.replace(month=today.month + 1, day=1)
     teacher_exams = Exam.objects.filter(
-        created_by=request.user, exam_date__gte=month_start, exam_date__lt=next_month,
-    )
+        Q(created_by=request.user) | Q(assigned_teacher=request.user),
+        exam_date__gte=month_start, exam_date__lt=next_month,
+    ).distinct()
     monthly_sessions = ClassSession.objects.filter(
         teacher=request.user, date__gte=month_start, date__lt=next_month,
     )
@@ -426,7 +427,9 @@ def teacher_dashboard(request):
             today_attendance.status if today_attendance else None,
             'নথিভুক্ত নয়',
         ),
-        'exam_count': Exam.objects.filter(created_by=request.user).count(),
+        'exam_count': Exam.objects.filter(
+            Q(created_by=request.user) | Q(assigned_teacher=request.user),
+        ).distinct().count(),
         'monthly_classes': monthly_sessions.filter(date__lte=today).count(),
         'today_completed_classes': ClassSession.objects.filter(
             teacher=request.user, date=today,
@@ -457,7 +460,9 @@ def teacher_dashboard(request):
         'month_absent': totals['absent'],
         'reviewed_teacher_days': reviewed_days,
         'chart': chart,
-        'recent_exams': Exam.objects.filter(created_by=request.user).order_by('-exam_date', '-created_at')[:5],
+        'recent_exams': Exam.objects.filter(
+            Q(created_by=request.user) | Q(assigned_teacher=request.user),
+        ).distinct().order_by('-exam_date', '-created_at')[:5],
         'teacher_routines': teacher_routines,
         'teacher_routine_version': get_teacher_routine_version(request.user),
         'calendar_month': calendar_month,

@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -20,14 +20,18 @@ from .sms import send_result_sms_notifications
 
 @role_required('teacher', 'superadmin')
 def exam_list(request):
-    form = ExamForm(request.POST or None)
+    form = ExamForm(request.POST or None, user=request.user)
     if request.method == 'POST' and form.is_valid():
         exam = form.save(commit=False)
         exam.created_by = request.user
+        if not request.user.is_superuser:
+            exam.assigned_teacher = request.user
         exam.save()
         return redirect('exam_list')
 
-    exams = Exam.objects.all() if request.user.is_superuser else Exam.objects.filter(created_by=request.user)
+    exams = Exam.objects.all() if request.user.is_superuser else Exam.objects.filter(
+        Q(created_by=request.user) | Q(assigned_teacher=request.user),
+    ).distinct()
     exams = exams.annotate(result_count=Count('results')).order_by('-exam_date', '-created_at')
     page_obj = Paginator(exams, 8).get_page(request.GET.get('page'))
 
@@ -79,9 +83,11 @@ def exam_list(request):
 
 @role_required('teacher', 'superadmin')
 def exam_edit(request, exam_id):
-    exams = Exam.objects.all() if request.user.is_superuser else Exam.objects.filter(created_by=request.user)
+    exams = Exam.objects.all() if request.user.is_superuser else Exam.objects.filter(
+        Q(created_by=request.user) | Q(assigned_teacher=request.user),
+    )
     exam = get_object_or_404(exams, pk=exam_id)
-    form = ExamForm(request.POST or None, instance=exam)
+    form = ExamForm(request.POST or None, instance=exam, user=request.user)
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'পরীক্ষার বিষয়, পত্র ও অধ্যায়ের তথ্য সংরক্ষণ হয়েছে।')
@@ -94,7 +100,9 @@ def exam_edit(request, exam_id):
 
 @role_required('teacher', 'superadmin')
 def exam_results(request, exam_id):
-    exams = Exam.objects.all() if request.user.is_superuser else Exam.objects.filter(created_by=request.user)
+    exams = Exam.objects.all() if request.user.is_superuser else Exam.objects.filter(
+        Q(created_by=request.user) | Q(assigned_teacher=request.user),
+    )
     exam = get_object_or_404(exams, pk=exam_id)
     students = Student.objects.filter(is_active=True, year_group=exam.year_group)
     saved = request.GET.get('saved') == '1'

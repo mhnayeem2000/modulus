@@ -46,11 +46,11 @@
   activateTab(tablist.dataset.activeTab);
 
   const mobilePdfQuery = window.matchMedia('(max-width: 820px)');
-  const mobilePdfLinks = Array.from(document.querySelectorAll('[data-mobile-download-url]'));
+  const mobilePdfLinks = Array.from(document.querySelectorAll('[data-mobile-preview-url]'));
   const updateMobilePdfLinks = () => {
     mobilePdfLinks.forEach((link) => {
       link.href = mobilePdfQuery.matches
-        ? link.dataset.mobileDownloadUrl
+        ? link.dataset.mobilePreviewUrl
         : link.dataset.desktopUrl;
     });
   };

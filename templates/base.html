@@ -18,9 +18,10 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/png" href="{% static 'images/Nav.png' %}">
-  <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20261026-1">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  <link rel="icon" type="image/png" href="{% static 'images/Nav-192.png' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20261026-11">
   <script defer src="{% static 'js/curriculum-selects.js' %}"></script>
   <script defer src="{% static 'js/sms-ajax.js' %}?v=20261015-4"></script>
   <script>
@@ -242,6 +243,9 @@
     <span>সুপার অ্যাডমিন রুটিন পরিবর্তন করেছেন।</span>
     <button class="button button-primary button-small" type="button" id="teacher-routine-update-refresh">নতুন রুটিন দেখুন</button>
   </aside>
+  {% endif %}
+  {% if user_role == 'student' and request.resolver_match.url_name == 'student_dashboard' %}
+  <script defer src="{% static 'js/student-dashboard.js' %}?v=20261026-4"></script>
   {% endif %}
   <script>
     document.querySelectorAll('.nav-link').forEach((link) => {

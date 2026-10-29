@@ -38,106 +38,132 @@
   <div class="panel-heading">
     <div>
       <span class="eyebrow">শিক্ষার্থীদের হিসাব</span>
-      <h2>মাসভিত্তিক বেতন ও বকেয়া</h2>
-      <p class="muted">শিক্ষার্থীর কার্ড খুললে সব মাসের বেতন, জমা ও বাকি দেখা যাবে।</p>
+      <h2>সকল মাসের সার্বিক হিসাব</h2>
+      <p class="muted">নির্বাচিত মাসের হিসাব ও শিক্ষার্থীর সব মাসের বিস্তারিত এখানে দেখুন।</p>
     </div>
   </div>
-  <div class="fee-month-estimate-grid">
-    <article class="fee-month-estimate-card"><span>{{ current_month }} · মোট ধার্য</span><strong>{{ current_month_estimate }} টাকা</strong><small>{{ current_month_fee_set_count }} / {{ active_student_count }} শিক্ষার্থীর অঙ্ক নির্ধারিত</small></article>
-    <article class="fee-month-estimate-card is-due"><span>{{ current_month }} · এখনো আদায় বাকি</span><strong>{{ current_month_due_estimate }} টাকা</strong><small>ধার্য বেতন থেকে এ মাসে জমা বাদ দিয়ে</small></article>
+  <div class="fee-month-estimate-grid fee-overall-estimate-grid">
+    <article class="fee-month-estimate-card"><span>সব মাস · মোট ধার্য</span><strong>{{ overall_total_fee }} টাকা</strong><small>সক্রিয় শিক্ষার্থীদের সব রেকর্ড</small></article>
+    <article class="fee-month-estimate-card"><span>সব মাস · মোট আদায়</span><strong>{{ overall_total_paid }} টাকা</strong><small>সক্রিয় শিক্ষার্থীদের সব রেকর্ড</small></article>
+    <article class="fee-month-estimate-card is-due"><span>সব মাস · মোট বকেয়া</span><strong>{{ overall_total_due }} টাকা</strong><small>ধার্য বেতন থেকে আদায় বাদ দিয়ে</small></article>
   </div>
-  <form method="get" class="fee-toolbar fee-accounts-toolbar" aria-label="বেতন ফিল্টার">
-    <label class="fee-filter-check">
-      <input type="checkbox" name="fee_due_only" value="1" {% if fee_due_only %}checked{% endif %}>
-      শুধু বকেয়া বা এখনো রেকর্ড নেই এমন শিক্ষার্থী
+  <form method="get" class="fee-calendar-toolbar" aria-label="মাস ও পরিশোধের অবস্থা বেছে নিন">
+    <label class="fee-calendar-month">
+      <span>ক্যালেন্ডার থেকে মাস বেছে নিন</span>
+      <input type="month" name="month" value="{{ selected_month }}" required>
     </label>
-    <label>
-      সাজানোর ক্রম
+    <label class="fee-calendar-status">
+      <span>পরিশোধের অবস্থা</span>
+      <select name="fee_status">
+        <option value="all" {% if fee_status == 'all' %}selected{% endif %}>সব শিক্ষার্থী</option>
+        <option value="paid" {% if fee_status == 'paid' %}selected{% endif %}>পুরো পরিশোধ করেছে</option>
+        <option value="due" {% if fee_status == 'due' %}selected{% endif %}>বকেয়া আছে</option>
+        <option value="unrecorded" {% if fee_status == 'unrecorded' %}selected{% endif %}>হিসাব/বেতন নির্ধারিত হয়নি</option>
+      </select>
+    </label>
+    <label class="fee-calendar-order">
+      <span>তালিকা সাজান</span>
       <select name="fee_order">
-        <option value="due_desc" {% if fee_order == 'due_desc' %}selected{% endif %}>বাকি বেশি আগে</option>
-        <option value="due_asc" {% if fee_order == 'due_asc' %}selected{% endif %}>বাকি কম আগে</option>
-        <option value="payment_desc" {% if fee_order == 'payment_desc' %}selected{% endif %}>আদায় বেশি আগে</option>
+        <option value="due_desc" {% if fee_order == 'due_desc' %}selected{% endif %}>বকেয়া বেশি আগে</option>
+        <option value="due_asc" {% if fee_order == 'due_asc' %}selected{% endif %}>বকেয়া কম আগে</option>
+        <option value="payment_desc" {% if fee_order == 'payment_desc' %}selected{% endif %}>জমা বেশি আগে</option>
         <option value="name" {% if fee_order == 'name' %}selected{% endif %}>নাম অনুযায়ী</option>
       </select>
     </label>
-    <button class="button button-light button-small" type="submit">ফিল্টার করুন</button>
-    {% if fee_due_only or fee_order != 'due_desc' %}<a class="button button-light button-small" href="{% url 'admin_student_accounts' %}">ফিল্টার মুছুন</a>{% endif %}
+    <button class="button button-primary button-small" type="submit">হিসাব দেখুন</button>
+    {% if fee_status != 'all' or fee_order != 'due_desc' or selected_month != current_month %}
+    <a class="button button-light button-small" href="{% url 'admin_student_accounts' %}">এই মাস</a>
+    {% endif %}
   </form>
+  <div class="fee-month-estimate-grid fee-selected-month-grid">
+    <article class="fee-month-estimate-card"><span>{{ selected_month_label }} · মোট ধার্য</span><strong>{{ selected_month_total_fee }} টাকা</strong><small>{{ selected_month_paid_students }} জন পুরো পরিশোধ করেছে · {{ selected_month_due_students }} জনের বাকি আছে</small></article>
+    <article class="fee-month-estimate-card"><span>{{ selected_month_label }} · মোট আদায়</span><strong>{{ selected_month_total_paid }} টাকা</strong><small>{{ selected_month_unrecorded_students }} জনের এই মাসের হিসাব নেই</small></article>
+    <article class="fee-month-estimate-card is-due"><span>{{ selected_month_label }} · মোট বকেয়া</span><strong>{{ selected_month_total_due }} টাকা</strong><small>এই মাসের নির্ধারিত বেতন থেকে আদায় বাদ দিয়ে</small></article>
+  </div>
 
   {% if student_fee_page %}
   <div class="fee-student-list">
     {% for row in student_fee_page %}
-    <article class="fee-student-item fee-student-account {% if row.total_due or not row.records %}fee-item-due{% else %}fee-item-clear{% endif %}">
-      <div class="fee-student-summary">
+    <details class="fee-student-item fee-student-account {% if row.selected_month_has_fee and row.selected_month_due %}fee-item-due{% elif row.selected_month_has_fee %}fee-item-clear{% endif %}">
+      <summary class="fee-student-summary">
         <div class="fee-student-main">
           <span class="fee-avatar">{{ row.student.name|slice:":1" }}</span>
           <div>
             <strong>{{ row.student.name }}</strong>
             <small>{{ row.student.student_id }} · {{ row.student.get_year_group_display }}</small>
-            {% if row.current_record %}<small>{{ current_month }} জমা: {{ row.current_record.amount_paid }} টাকা · বাকি: {{ row.current_record.due_amount }} টাকা</small>{% else %}<small>{{ current_month }}-এর রেকর্ড এখনো নেই</small>{% endif %}
           </div>
         </div>
-        <div class="fee-student-amounts">
-          <span class="fee-stat due">{{ row.total_due }} টাকা বাকি</span>
-          <span class="fee-stat paid">{{ row.total_paid }} টাকা দেওয়া</span>
-          <span class="fee-status {% if row.is_up_to_date %}fee-status-updated{% else %}fee-status-due{% endif %}">
-            {% if row.is_up_to_date %}Up to date{% else %}Due{% endif %}
+        <div class="fee-student-amounts fee-student-collapsed-status">
+          {% if row.last_paid_record %}
+          <span class="fee-stat paid">সর্বশেষ জমা: {{ row.last_paid_record.month_label }} · {{ row.last_paid_record.amount_paid }} টাকা</span>
+          {% else %}
+          <span class="fee-stat paid">এখনো কোনো মাসে জমা নেই</span>
+          {% endif %}
+          {% if row.selected_month_has_fee %}<span class="fee-stat due">{{ selected_month_label }}-এ দিতে হবে {{ row.selected_month_due }} টাকা</span>{% else %}<span class="fee-status fee-status-unset fee-month-unset-label">{{ selected_month_label }}-এর বেতন নির্ধারিত হয়নি</span>{% endif %}
+          <span class="fee-status {% if row.selected_month_has_fee and not row.selected_month_due %}fee-status-updated{% elif row.selected_month_has_fee %}fee-status-due{% else %}fee-status-unset{% endif %}">
+            {% if row.selected_month_has_fee and not row.selected_month_due %}Up to date{% elif row.selected_month_has_fee and row.selected_month_paid == 0 %}এখনো দেয়নি{% elif row.selected_month_has_fee %}আংশিক জমা{% else %}হিসাব নেই{% endif %}
           </span>
         </div>
+        <span class="fee-expand-indicator" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none" focusable="false">
+            <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </summary>
+      <div class="fee-student-expanded">
         <form method="post" class="fee-inline-month-form" aria-label="{{ row.student.name }}-এর এই মাসের ধার্য বেতন">
           {% csrf_token %}
           <input type="hidden" name="student_monthly_fee_submit" value="1">
           <input type="hidden" name="student_id" value="{{ row.student.pk }}">
-          <label for="{{ row.monthly_fee_form.monthly_fee.id_for_label }}">{{ current_month }}-এর বেতন (টাকা)</label>
+          <label for="{{ row.monthly_fee_form.monthly_fee.id_for_label }}">{{ current_month_label }}-এর বেতন (টাকা)</label>
           <div class="fee-inline-input">{{ row.monthly_fee_form.monthly_fee }}</div>
           <button class="button button-primary button-small" type="submit">নির্ধারণ</button>
           {% if row.monthly_fee_form.monthly_fee.errors %}<span class="form-errors">{{ row.monthly_fee_form.monthly_fee.errors }}</span>{% endif %}
         </form>
-      </div>
-      <details class="fee-history-details">
-        <summary>মাসভিত্তিক হিসাব দেখুন <span aria-hidden="true">⌄</span></summary>
-        <div class="fee-detail-panel">
+        <h3 class="fee-expanded-month-heading">{{ selected_month_label }}-এর হিসাব</h3>
         <div class="fee-detail-summary">
-          <div><span>মোট নির্ধারিত বেতন</span><strong>{{ row.total_fee }} টাকা</strong></div>
-          <div><span>মোট আদায়</span><strong>{{ row.total_paid }} টাকা</strong></div>
-          <div><span>মোট বাকি</span><strong>{{ row.total_due }} টাকা</strong></div>
+          <div><span>নির্ধারিত বেতন</span><strong>{{ row.selected_month_fee }} টাকা</strong></div>
+          <div><span>আদায়</span><strong>{{ row.selected_month_paid }} টাকা</strong></div>
+          <div><span>বাকি</span><strong>{{ row.selected_month_due }} টাকা</strong></div>
         </div>
         {% if row.records %}
         <div class="fee-month-list">
           {% for record in row.records %}
-          <article class="fee-month-item">
+          <article class="fee-month-item {% if record.monthly_fee > 0 and not record.due_amount %}is-paid{% elif record.due_amount %}is-due{% endif %}">
             <div class="fee-month-header">
-              <strong>{{ record.month }}</strong>
-              <span class="fee-month-status {% if record.due_amount %}fee-month-status-due{% else %}fee-month-status-paid{% endif %}">
-                {% if record.due_amount %}বাকি {{ record.due_amount }}{% else %}পরিশোধিত{% endif %}
+              <strong>{{ record.month_label }}</strong>
+              <span class="fee-month-status {% if record.due_amount %}fee-month-status-due{% elif record.monthly_fee > 0 %}fee-month-status-paid{% else %}fee-month-status-unset{% endif %}">
+                {% if record.monthly_fee <= 0 %}বেতন নির্ধারিত হয়নি{% elif record.due_amount %}বাকি {{ record.due_amount }} টাকা{% else %}পরিশোধিত · Up to date{% endif %}
               </span>
             </div>
             <div class="fee-month-metrics">
-              <span>মাসিক বেতন: {{ record.monthly_fee }} টাকা</span>
-              <span>দেওয়া: {{ record.amount_paid }} টাকা</span>
-              <span>বাকি: {{ record.due_amount }} টাকা</span>
+              <span>{{ record.month_label }}-এর বেতন: {{ record.monthly_fee }} টাকা</span>
+              <span>{{ record.month_label }}-এ জমা: {{ record.amount_paid }} টাকা</span>
+              <span>{{ record.month_label }}-এ বাকি: {{ record.due_amount }} টাকা</span>
             </div>
             {% if record.note %}<p>{{ record.note }}</p>{% endif %}
             <small>সর্বশেষ হালনাগাদ: {{ record.updated_at|date:"d M Y, h:i A" }}</small>
+            {% if record.amount_paid > 0 %}
+            <a class="button button-light button-small fee-receipt-download" href="{% url 'admin_student_fee_receipt' row.student.pk record.month %}" download>{{ record.month_label }}-এর রসিদ PDF ডাউনলোড</a>
+            {% endif %}
           </article>
           {% endfor %}
         </div>
         {% else %}
         <div class="empty-state compact-empty"><span>৳</span><strong>কোনো বেতন রেকর্ড নেই</strong><p>এই শিক্ষার্থীর জন্য নতুন মাসের বেতন রেকর্ড যোগ করুন।</p></div>
         {% endif %}
-        </div>
-      </details>
-    </article>
+      </div>
+    </details>
     {% endfor %}
   </div>
   {% if student_fee_page.paginator.num_pages > 1 %}
   <nav class="pagination-row" aria-label="শিক্ষার্থী তালিকার পৃষ্ঠা">
     {% if student_fee_page.has_previous %}
-    <a class="button button-light button-small" href="?page={{ student_fee_page.previous_page_number }}&fee_due_only={{ fee_due_only|yesno:'1,0' }}&fee_order={{ fee_order }}">আগের পাতা</a>
+    <a class="button button-light button-small" href="?page={{ student_fee_page.previous_page_number }}&month={{ selected_month }}&fee_status={{ fee_status }}&fee_order={{ fee_order }}">আগের পাতা</a>
     {% else %}<span></span>{% endif %}
     <span>পৃষ্ঠা {{ student_fee_page.number }} / {{ student_fee_page.paginator.num_pages }} · মোট {{ student_fee_page.paginator.count }} জন</span>
     {% if student_fee_page.has_next %}
-    <a class="button button-light button-small" href="?page={{ student_fee_page.next_page_number }}&fee_due_only={{ fee_due_only|yesno:'1,0' }}&fee_order={{ fee_order }}">পরের পাতা</a>
+    <a class="button button-light button-small" href="?page={{ student_fee_page.next_page_number }}&month={{ selected_month }}&fee_status={{ fee_status }}&fee_order={{ fee_order }}">পরের পাতা</a>
     {% else %}<span></span>{% endif %}
   </nav>
   {% endif %}

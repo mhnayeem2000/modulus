@@ -56,7 +56,7 @@ def build_result_sms_message(notification):
 
     def compose():
         return (
-            f'প্রিয় অভিভাবক, আপনার {fields[0]} {fields[1]} {fields[2]} {fields[3]} '
+            f'প্রিয় অভিভাবক, {fields[0]} {fields[1]} {fields[2]} {fields[3]} - এ '
             f'{score} পেয়েছে। Rank: {rank}/{rank_out_of}\n'
             '-Modulus Edu'
         )

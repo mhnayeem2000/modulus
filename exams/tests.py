@@ -9,6 +9,7 @@ from django.urls import reverse
 
 from attendance.models import AttendanceSMSSettings
 from students.models import Student
+from portal.models import UserProfile
 from .forms import ExamForm
 from .models import Exam, ExamResult, ExamResultSMSNotification
 from .sms import SMSDeliveryError, build_result_sms_message
@@ -40,6 +41,39 @@ class ExamResultTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.exam.title)
+
+    def test_superadmin_can_assign_exam_to_teacher(self):
+        assigned_teacher = get_user_model().objects.create_user(
+            username='assigned-exam-teacher',
+            password='safe-test-password',
+        )
+        UserProfile.objects.create(user=assigned_teacher, role=UserProfile.Role.TEACHER)
+        superadmin = get_user_model().objects.create_superuser(
+            username='exam-creator-admin',
+            password='safe-admin-password',
+        )
+        self.client.force_login(superadmin)
+
+        response = self.client.post(reverse('exam_list'), {
+            'title': 'অ্যাডমিন নির্ধারিত পরীক্ষা',
+            'exam_date': '2026-10-20',
+            'year_group': 'first',
+            'subject': 'পদার্থবিজ্ঞান',
+            'paper': '১ম পত্র',
+            'chapter': 'ভেক্টর',
+            'topic': 'অনুশীলন',
+            'total_marks': 20,
+            'assigned_teacher': assigned_teacher.pk,
+        })
+
+        self.assertRedirects(response, reverse('exam_list'))
+        exam = Exam.objects.get(title='অ্যাডমিন নির্ধারিত পরীক্ষা')
+        self.assertEqual(exam.created_by, superadmin)
+        self.assertEqual(exam.assigned_teacher, assigned_teacher)
+
+        self.client.force_login(assigned_teacher)
+        response = self.client.get(reverse('exam_list'))
+        self.assertContains(response, exam.title)
 
     def test_exam_list_paginates_owner_scoped_exams_and_keeps_month_selection(self):
         for index in range(9):
@@ -157,7 +191,7 @@ class ExamResultTests(TestCase):
             params = urllib.parse.parse_qs(urllib.parse.urlparse(request.full_url).query)
             message = params['message'][0]
             self.assertLessEqual(len(message), 160)
-            self.assertTrue(message.startswith('প্রিয় অভিভাবক, আপনার আয়েশা রহমান'))
+            self.assertTrue(message.startswith('প্রিয় অভিভাবক, আয়েশা রহমান'))
             self.assertIn('পদার্থবিজ্ঞান ১ম Paper ভেক্টর Chapter', message)
             self.assertIn(f'{expected_score} পেয়েছে।', message)
             self.assertIn('Rank: 2/3', message)
@@ -230,7 +264,8 @@ class ExamResultTests(TestCase):
         message = build_result_sms_message(notification)
 
         self.assertLessEqual(len(message), 160)
-        self.assertIn('আপনার', message)
+        self.assertTrue(message.startswith('প্রিয় অভিভাবক, '))
+        self.assertIn(' - এ ', message)
         self.assertIn('16.5/20', message)
         self.assertIn('Rank: 1/1', message)
         self.assertEqual(len(message), 160)

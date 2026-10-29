@@ -1,5 +1,6 @@
 import tempfile
 from datetime import date, time, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -182,7 +183,7 @@ class StudentPortalTests(TestCase):
         )
         self.assertContains(
             response,
-            'data-mobile-download-url="https://drive.google.com/uc?export=download&amp;id=1vR3JzTvJAvj7rwSiqzmPQEpUHxsqfeel"',
+            'data-mobile-preview-url="https://drive.google.com/file/d/1vR3JzTvJAvj7rwSiqzmPQEpUHxsqfeel/preview"',
         )
         self.assertContains(response, 'PDF লিংক শিগগিরই যোগ হবে')
 
@@ -346,13 +347,14 @@ class StudentPortalTests(TestCase):
     def test_student_dashboard_top_panel_shows_next_class_details_and_time(self):
         Routine.objects.create(
             teacher=self.teacher,
-            class_name=self.student.class_name,
+            class_name='পুরোনো ব্যাচের নাম',
             weekday=(timezone.localdate().weekday() + 1) % 7,
             start_time=time(15, 30),
             end_time=time(17, 30),
             subject='রসায়ন',
             paper='১ম পত্র',
             chapter='পর্যায় সারণি',
+            year_group=self.student.year_group,
         )
         self.client.force_login(self.student_user)
 
@@ -363,6 +365,57 @@ class StudentPortalTests(TestCase):
         self.assertContains(response, 'রসায়ন · ১ম পত্র')
         self.assertContains(response, 'অধ্যায়: পর্যায় সারণি')
         self.assertContains(response, '3:30 অপরাহ্ন–5:30 অপরাহ্ন')
+
+    def test_student_dashboard_shows_two_upcoming_classes_before_the_next_exam(self):
+        tomorrow_weekday = (timezone.localdate().weekday() + 1) % 7
+        first_class = Routine.objects.create(
+            teacher=self.teacher,
+            class_name=self.student.class_name,
+            weekday=tomorrow_weekday,
+            start_time=time(9),
+            end_time=time(10),
+            subject='পদার্থবিজ্ঞান',
+        )
+        second_class = Routine.objects.create(
+            teacher=self.teacher,
+            class_name=self.student.class_name,
+            weekday=tomorrow_weekday,
+            start_time=time(11),
+            end_time=time(12),
+            subject='রসায়ন',
+        )
+        exam = Exam.objects.create(
+            title='সাপ্তাহিক পরীক্ষা',
+            exam_date=timezone.localdate() + timedelta(days=2),
+            class_name=self.student.class_name,
+            paper='১ম পত্র',
+            chapter='ভেক্টর',
+            topic='ডট গুণন',
+            total_marks=20,
+            created_by=self.teacher,
+        )
+        self.client.force_login(self.student_user)
+
+        response = self.client.get(reverse('student_dashboard'))
+
+        self.assertEqual(
+            [item['routine'] for item in response.context['next_classes']],
+            [first_class, second_class],
+        )
+        self.assertContains(response, 'data-student-events-carousel')
+        event_section = response.content.decode().split(
+            'data-student-events-carousel',
+            1,
+        )[1].split('</section>', 1)[0]
+        self.assertLess(
+            event_section.index('পদার্থবিজ্ঞান'),
+            event_section.index('রসায়ন'),
+        )
+        self.assertLess(
+            event_section.index('রসায়ন'),
+            event_section.index(exam.title),
+        )
+        self.assertNotContains(response, 'data-carousel-next')
 
     def test_student_dashboard_top_panel_shows_next_exam_even_beyond_this_week(self):
         exam = Exam.objects.create(
@@ -407,7 +460,7 @@ class StudentPortalTests(TestCase):
 
         response = self.client.get(reverse('student_dashboard'))
 
-        self.assertFalse(response.context['tomorrow_classes'].exists())
+        self.assertFalse(response.context['tomorrow_classes'])
         self.assertContains(response, 'কাল কোনো ক্লাস নেই')
         self.assertContains(response, 'এখনো কোনো ক্লাসের রুটিন নেই')
         self.assertContains(response, 'student-tomorrow-notice')
@@ -482,6 +535,90 @@ class StudentPortalTests(TestCase):
         )
         progress.refresh_from_db()
         self.assertTrue(progress.is_completed)
+
+    def test_student_can_select_recent_study_dates_but_cannot_submit_after_three_days(self):
+        today = timezone.localdate()
+        recent_session = ClassSession.objects.create(
+            teacher=self.teacher,
+            class_name=self.student.class_name,
+            year_group=self.student.year_group,
+            date=today - timedelta(days=2),
+            subject='পদার্থবিজ্ঞান',
+            chapter='ভেক্টর',
+        )
+        expired_session = ClassSession.objects.create(
+            teacher=self.teacher,
+            class_name=self.student.class_name,
+            year_group=self.student.year_group,
+            date=today - timedelta(days=3),
+            subject='রসায়ন',
+            chapter='জৈব রসায়ন',
+        )
+        self.client.force_login(self.student_user)
+
+        recent_response = self.client.get(reverse('student_dashboard'), {
+            'study_date': recent_session.date.isoformat(),
+        })
+        self.assertEqual(recent_response.context['study_date'], recent_session.date)
+        self.assertTrue(recent_response.context['today_study_sessions'][0]['can_submit'])
+        self.assertContains(recent_response, 'ভেক্টর')
+        self.assertContains(recent_response, 'অগ্রগতি সংরক্ষণ')
+
+        submit_response = self.client.post(
+            reverse('update_class_session_progress', args=[recent_session.pk]),
+            {'is_completed': 'on', 'problem_description': ''},
+        )
+        self.assertRedirects(
+            submit_response,
+            f"{reverse('student_dashboard')}?study_date={recent_session.date.isoformat()}#todays-study",
+        )
+        self.assertTrue(
+            ClassSessionProgress.objects.get(
+                session=recent_session,
+                student=self.student,
+            ).is_completed
+        )
+
+        expired_response = self.client.get(reverse('student_dashboard'), {
+            'study_date': expired_session.date.isoformat(),
+        })
+        self.assertFalse(expired_response.context['today_study_sessions'][0]['can_submit'])
+        self.assertContains(expired_response, 'জমা দেওয়ার সময় শেষ')
+        self.assertContains(expired_response, 'জৈব রসায়ন')
+
+        expired_submit_response = self.client.post(
+            reverse('update_class_session_progress', args=[expired_session.pk]),
+            {'is_completed': 'on', 'problem_description': ''},
+        )
+        self.assertRedirects(
+            expired_submit_response,
+            f"{reverse('student_dashboard')}?study_date={expired_session.date.isoformat()}#todays-study",
+        )
+        self.assertFalse(
+            ClassSessionProgress.objects.filter(
+                session=expired_session,
+                student=self.student,
+            ).exists()
+        )
+
+    def test_recent_routine_classes_link_to_their_study_details(self):
+        session = ClassSession.objects.create(
+            teacher=self.teacher,
+            class_name=self.student.class_name,
+            year_group=self.student.year_group,
+            date=timezone.localdate() - timedelta(days=1),
+            subject='পদার্থবিজ্ঞান',
+            chapter='ভেক্টর',
+        )
+        self.client.force_login(self.student_user)
+
+        response = self.client.get(reverse('student_routine'))
+
+        self.assertContains(
+            response,
+            f'{reverse("student_dashboard")}?study_date={session.date.isoformat()}#todays-study',
+        )
+        self.assertContains(response, 'পড়ার বিস্তারিত')
 
     def test_student_can_submit_private_feedback(self):
         self.client.force_login(self.student_user)
@@ -624,27 +761,29 @@ class StudentPortalTests(TestCase):
         self.assertContains(books_page, 'ভেক্টর অধ্যায়ের বই')
         self.assertContains(books_page, 'পদার্থবিজ্ঞান')
 
-    def test_student_sees_full_routine_for_own_batch_only(self):
+    def test_student_routine_uses_admin_scheduled_routines_for_own_year_group(self):
         second_teacher = get_user_model().objects.create_user(username='second-teacher')
         Routine.objects.create(
             teacher=self.teacher,
-            class_name=self.student.class_name,
+            class_name='পুরোনো ব্যাচের নাম',
             weekday=Routine.Weekday.SATURDAY,
             start_time=time(9),
             end_time=time(10),
             subject='পদার্থবিজ্ঞান',
+            year_group=self.student.year_group,
         )
         Routine.objects.create(
             teacher=second_teacher,
-            class_name=self.student.class_name,
+            class_name='১ম বর্ষ',
             weekday=Routine.Weekday.MONDAY,
             start_time=time(11),
             end_time=time(12),
             subject='রসায়ন',
+            year_group=self.student.year_group,
         )
         Routine.objects.create(
             teacher=second_teacher,
-            class_name=self.other_student.class_name,
+            class_name=self.student.class_name,
             weekday=Routine.Weekday.TUESDAY,
             start_time=time(13),
             end_time=time(14),
@@ -694,6 +833,36 @@ class StudentPortalTests(TestCase):
         self.assertContains(response, '২য় ক্লাস')
         self.assertContains(response, '3:00 অপরাহ্ন–4:30 অপরাহ্ন')
         self.assertContains(response, '4:30 অপরাহ্ন–6:00 অপরাহ্ন')
+
+    def test_student_routine_and_dashboard_use_admin_routine_year_group(self):
+        routine = Routine.objects.create(
+            teacher=self.teacher,
+            class_name='পুরোনো রুটিনের নাম',
+            weekday=(timezone.localdate().weekday() + 1) % 7,
+            start_time=time(9),
+            end_time=time(10),
+            subject='ব্যাচের নির্ধারিত ক্লাস',
+            year_group=self.student.year_group,
+        )
+        Routine.objects.create(
+            teacher=self.teacher,
+            class_name=self.student.class_name,
+            weekday=routine.weekday,
+            start_time=time(10),
+            end_time=time(11),
+            subject='অন্য ব্যাচের ক্লাস',
+            year_group=self.other_student.year_group,
+        )
+        self.client.force_login(self.student_user)
+
+        routine_response = self.client.get(reverse('student_routine'))
+        dashboard_response = self.client.get(reverse('student_dashboard'))
+
+        self.assertContains(routine_response, 'ব্যাচের নির্ধারিত ক্লাস')
+        self.assertEqual(dashboard_response.context['next_class']['routine'], routine)
+        self.assertContains(dashboard_response, 'ব্যাচের নির্ধারিত ক্লাস')
+        self.assertNotContains(dashboard_response, 'অন্য ব্যাচের ক্লাস')
+        self.assertNotContains(dashboard_response, 'এখনো কোনো ক্লাসের রুটিন নেই')
 
     def test_student_is_denied_teacher_and_admin_pages(self):
         self.client.force_login(self.student_user)
@@ -766,9 +935,16 @@ class TeacherAndSuperAdminPortalTests(TestCase):
         )
 
     def test_admin_dashboard_shows_only_aggregate_fee_numbers(self):
+        current_month = timezone.localdate().strftime('%Y-%m')
         StudentFeeRecord.objects.create(
             student=self.student,
             month='2026-09',
+            monthly_fee=300,
+            amount_paid=0,
+        )
+        StudentFeeRecord.objects.create(
+            student=self.student,
+            month=current_month,
             monthly_fee=1000,
             amount_paid=1000,
         )
@@ -779,7 +955,7 @@ class TeacherAndSuperAdminPortalTests(TestCase):
         )
         StudentFeeRecord.objects.create(
             student=owing_student,
-            month='2026-09',
+            month=current_month,
             monthly_fee=5000,
             amount_paid=2000,
         )
@@ -793,11 +969,109 @@ class TeacherAndSuperAdminPortalTests(TestCase):
         self.assertEqual(response.context['fee_total_earned'], 6000)
         self.assertEqual(response.context['fee_total_collected'], 3000)
         self.assertEqual(response.context['fee_total_due'], 3000)
+        self.assertEqual(response.context['fee_current_month'], current_month)
         self.assertContains(response, 'মোট আদায়')
         self.assertContains(response, reverse('admin_student_accounts'))
         self.assertNotContains(response, 'student_fee_submit')
         self.assertNotContains(response, 'এক নজরে পুরো কোচিং')
         self.assertNotContains(response, 'শিক্ষক, শিক্ষার্থী ও ক্লাসের খবর রাখুন।')
+
+    def test_student_accounts_calendar_filters_monthly_paid_and_due_students(self):
+        self.student.is_active = True
+        self.student.save(update_fields=['is_active'])
+        owing_student = Student.objects.create(
+            name='বকেয়া শিক্ষার্থী',
+            student_id='ST-1025',
+            class_name='HSC 2026 · বিজ্ঞান',
+        )
+        no_record_student = Student.objects.create(
+            name='রেকর্ডবিহীন শিক্ষার্থী',
+            student_id='ST-1026',
+            class_name='HSC 2026 · বিজ্ঞান',
+        )
+        StudentFeeRecord.objects.create(
+            student=self.student,
+            month='2026-08',
+            monthly_fee=1000,
+            amount_paid=1000,
+        )
+        StudentFeeRecord.objects.create(
+            student=owing_student,
+            month='2026-08',
+            monthly_fee=2000,
+            amount_paid=500,
+        )
+        StudentFeeRecord.objects.create(
+            student=owing_student,
+            month='2026-07',
+            monthly_fee=3000,
+            amount_paid=1000,
+        )
+        self.client.force_login(self.superadmin)
+
+        response = self.client.get(reverse('admin_student_accounts'), {
+            'month': '2026-08',
+            'fee_status': 'due',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['selected_month_total_fee'], 3000)
+        self.assertEqual(response.context['selected_month_total_paid'], 1500)
+        self.assertEqual(response.context['selected_month_total_due'], 1500)
+        self.assertEqual(response.context['selected_month_paid_students'], 1)
+        self.assertEqual(response.context['selected_month_due_students'], 1)
+        self.assertEqual(response.context['selected_month_unrecorded_students'], 1)
+        self.assertEqual(response.context['overall_total_fee'], 6000)
+        self.assertEqual(response.context['overall_total_paid'], 2500)
+        self.assertEqual(response.context['overall_total_due'], 3500)
+        self.assertEqual(response.context['student_fee_page'].object_list[0]['student'], owing_student)
+        self.assertContains(response, 'type="month"')
+        self.assertContains(response, 'পরিশোধের অবস্থা')
+        self.assertContains(response, 'নির্ধারিত বেতন')
+        owing_row = response.context['student_fee_page'].object_list[0]
+        self.assertEqual(owing_row['selected_month_fee'], 2000)
+        self.assertEqual(owing_row['selected_month_paid'], 500)
+        self.assertEqual(owing_row['selected_month_due'], 1500)
+        self.assertEqual(owing_row['last_paid_record'].month, '2026-08')
+        self.assertEqual(owing_row['last_paid_record'].amount_paid, 500)
+        self.assertNotContains(response, 'মোট নির্ধারিত বেতন')
+        self.assertEqual(
+            [row['student'] for row in response.context['student_fee_page'].object_list],
+            [owing_student],
+        )
+
+        paid_response = self.client.get(reverse('admin_student_accounts'), {
+            'month': '2026-08',
+            'fee_status': 'paid',
+        })
+        self.assertEqual(paid_response.context['student_fee_page'].object_list[0]['student'], self.student)
+        self.assertContains(
+            paid_response,
+            reverse(
+                'admin_student_fee_receipt',
+                args=[self.student.pk, '2026-08'],
+            ),
+        )
+        paid_row = paid_response.context['student_fee_page'].object_list[0]
+        last_paid_month_label = paid_row['last_paid_record'].month_label
+        self.assertContains(
+            paid_response,
+            f'সর্বশেষ জমা: {last_paid_month_label} · 1000.00 টাকা',
+        )
+        self.assertContains(
+            paid_response,
+            f'{last_paid_month_label}-এর রসিদ PDF ডাউনলোড',
+        )
+
+        unrecorded_response = self.client.get(reverse('admin_student_accounts'), {
+            'month': '2026-08',
+            'fee_status': 'unrecorded',
+        })
+        self.assertEqual(
+            unrecorded_response.context['student_fee_page'].object_list[0]['student'],
+            no_record_student,
+        )
+        self.assertNotContains(unrecorded_response, 'রসিদ PDF')
 
     def test_student_accounts_page_is_superadmin_only_and_records_fee(self):
         self.client.force_login(self.teacher)
@@ -822,6 +1096,109 @@ class TeacherAndSuperAdminPortalTests(TestCase):
         fee_record = StudentFeeRecord.objects.get(student=self.student, month='2026-10')
         self.assertEqual(fee_record.due_amount, 1500)
         self.assertEqual(fee_record.recorded_by, self.superadmin)
+
+    def test_student_fee_form_updates_existing_student_month_record(self):
+        existing_record = StudentFeeRecord.objects.create(
+            student=self.student,
+            month='2026-10',
+            monthly_fee=5000,
+            amount_paid=0,
+            note='অক্টোবরের বেতন',
+        )
+        self.client.force_login(self.superadmin)
+
+        response = self.client.post(reverse('admin_student_accounts'), {
+            'student_fee_submit': '1',
+            'student': self.student.pk,
+            'month': '2026-10',
+            'monthly_fee': '5000',
+            'amount_paid': '5000',
+            'note': 'অক্টোবরের বেতন সম্পূর্ণ পরিশোধ',
+        })
+
+        self.assertRedirects(response, reverse('admin_student_accounts'))
+        self.assertEqual(
+            StudentFeeRecord.objects.filter(student=self.student, month='2026-10').count(),
+            1,
+        )
+        existing_record.refresh_from_db()
+        self.assertEqual(existing_record.amount_paid, 5000)
+        self.assertEqual(existing_record.due_amount, 0)
+        self.assertEqual(existing_record.note, 'অক্টোবরের বেতন সম্পূর্ণ পরিশোধ')
+        self.assertEqual(existing_record.recorded_by, self.superadmin)
+
+    def test_paid_month_receipt_downloads_for_student_and_superadmin(self):
+        student_user = get_user_model().objects.create_user(
+            username='receipt-student',
+            password='safe-test-password',
+        )
+        UserProfile.objects.create(user=student_user, role=UserProfile.Role.STUDENT)
+        self.student.user = student_user
+        self.student.phone = '01700000000'
+        self.student.save(update_fields=['user', 'phone'])
+        paid_record = StudentFeeRecord.objects.create(
+            student=self.student,
+            month='2026-08',
+            monthly_fee=2000,
+            amount_paid=1200,
+        )
+        StudentFeeRecord.objects.create(
+            student=self.student,
+            month='2026-07',
+            monthly_fee=1000,
+            amount_paid=1000,
+        )
+        unpaid_record = StudentFeeRecord.objects.create(
+            student=self.student,
+            month='2026-06',
+            monthly_fee=1000,
+            amount_paid=0,
+        )
+
+        self.client.force_login(student_user)
+        dashboard = self.client.get(reverse('student_dashboard'))
+        paid_receipt_url = reverse('student_fee_receipt', args=[paid_record.month])
+        self.assertContains(dashboard, paid_receipt_url)
+        self.assertNotContains(
+            dashboard,
+            reverse('student_fee_receipt', args=[unpaid_record.month]),
+        )
+
+        receipt = self.client.get(paid_receipt_url)
+        self.assertEqual(receipt.status_code, 200)
+        self.assertEqual(receipt['Content-Type'], 'application/pdf')
+        self.assertIn('attachment;', receipt['Content-Disposition'])
+        self.assertTrue(receipt.content.startswith(b'%PDF-'))
+        self.assertIn('no-store', receipt['Cache-Control'])
+        self.assertNotContains(dashboard, 'student_fee_submit')
+        self.assertEqual(
+            self.client.get(reverse('student_fee_receipt', args=[unpaid_record.month])).status_code,
+            404,
+        )
+
+        self.client.force_login(self.teacher)
+        self.assertEqual(self.client.get(paid_receipt_url).status_code, 403)
+
+        self.client.force_login(self.superadmin)
+        account_page = self.client.get(
+            reverse('admin_student_accounts'),
+            {'month': paid_record.month},
+        )
+        self.assertContains(
+            account_page,
+            reverse(
+                'admin_student_fee_receipt',
+                args=[self.student.pk, paid_record.month],
+            ),
+        )
+        admin_receipt = self.client.get(
+            reverse(
+                'admin_student_fee_receipt',
+                args=[self.student.pk, paid_record.month],
+            )
+        )
+        self.assertEqual(admin_receipt.status_code, 200)
+        self.assertTrue(admin_receipt.content.startswith(b'%PDF-'))
 
     def test_current_month_fee_can_be_set_inline_and_is_shown_to_student(self):
         current_month = timezone.localdate().strftime('%Y-%m')
@@ -864,7 +1241,7 @@ class TeacherAndSuperAdminPortalTests(TestCase):
             dashboard.context['student_fee_current_record'].monthly_fee,
             existing_record.monthly_fee,
         )
-        self.assertContains(dashboard, 'এই মাসের নির্ধারিত বেতন')
+        self.assertContains(dashboard, 'এই মাসের বেতন')
 
         self.client.force_login(self.teacher)
         teacher_student_detail = self.client.get(
@@ -872,6 +1249,135 @@ class TeacherAndSuperAdminPortalTests(TestCase):
         )
         self.assertEqual(teacher_student_detail.status_code, 200)
         self.assertNotContains(teacher_student_detail, 'বেতন সংক্ষিপ্তসার')
+
+    def test_monthly_fee_carries_forward_and_status_updates_with_calendar_month(self):
+        student_user = get_user_model().objects.create_user(
+            username='monthly-fee-student',
+            password='safe-test-password',
+        )
+        UserProfile.objects.create(user=student_user, role=UserProfile.Role.STUDENT)
+        self.student.user = student_user
+        self.student.save(update_fields=['user'])
+        StudentFeeRecord.objects.create(
+            student=self.student,
+            month='2026-09',
+            monthly_fee=5000,
+            amount_paid=5000,
+        )
+
+        with patch('portal.views.timezone.localdate', return_value=date(2026, 10, 1)):
+            self.client.force_login(student_user)
+            student_dashboard = self.client.get(reverse('student_dashboard'))
+            self.assertEqual(
+                student_dashboard.context['student_fee_current_monthly_fee'],
+                5000,
+            )
+            self.assertEqual(student_dashboard.context['student_fee_current_due'], 5000)
+            self.assertFalse(student_dashboard.context['student_fee_up_to_date'])
+            self.assertContains(student_dashboard, 'আপনি এই মাসের বেতন পরিশোধ করেননি')
+
+            self.client.force_login(self.superadmin)
+            admin_dashboard = self.client.get(reverse('admin_dashboard'))
+            self.assertEqual(admin_dashboard.context['fee_total_earned'], 5000)
+            self.assertEqual(admin_dashboard.context['fee_total_due'], 5000)
+            self.assertEqual(admin_dashboard.context['fee_unpaid_students'], 1)
+
+            accounts = self.client.get(reverse('admin_student_accounts'))
+            self.assertEqual(accounts.context['selected_month_total_fee'], 5000)
+            self.assertEqual(accounts.context['selected_month_total_due'], 5000)
+            self.assertEqual(accounts.context['selected_month_unrecorded_students'], 0)
+            self.assertContains(accounts, 'এখনো দেয়নি')
+
+        StudentFeeRecord.objects.create(
+            student=self.student,
+            month='2026-10',
+            monthly_fee=5000,
+            amount_paid=5000,
+        )
+        with patch('portal.views.timezone.localdate', return_value=date(2026, 11, 1)):
+            self.client.force_login(student_user)
+            next_month_dashboard = self.client.get(reverse('student_dashboard'))
+            self.assertEqual(
+                next_month_dashboard.context['student_fee_current_month'],
+                '2026-11',
+            )
+            self.assertEqual(next_month_dashboard.context['student_fee_current_due'], 5000)
+            self.assertFalse(next_month_dashboard.context['student_fee_up_to_date'])
+            self.assertContains(next_month_dashboard, 'আপনি এই মাসের বেতন পরিশোধ করেননি')
+
+        StudentFeeRecord.objects.create(
+            student=self.student,
+            month='2026-11',
+            monthly_fee=5000,
+            amount_paid=5000,
+        )
+        with patch('portal.views.timezone.localdate', return_value=date(2026, 11, 1)):
+            current_student_dashboard = self.client.get(reverse('student_dashboard'))
+            self.assertTrue(current_student_dashboard.context['student_fee_up_to_date'])
+            self.assertContains(current_student_dashboard, 'Up to date')
+            self.assertContains(current_student_dashboard, 'student-current-fee is-paid')
+
+    def test_current_month_summary_and_other_month_history_keep_amounts_separate(self):
+        student_user = get_user_model().objects.create_user(
+            username='separate-month-fee-student',
+            password='safe-test-password',
+        )
+        UserProfile.objects.create(user=student_user, role=UserProfile.Role.STUDENT)
+        self.student.user = student_user
+        self.student.save(update_fields=['user'])
+        october_record = StudentFeeRecord.objects.create(
+            student=self.student,
+            month='2026-10',
+            monthly_fee=5000,
+            amount_paid=5000,
+        )
+        november_record = StudentFeeRecord.objects.create(
+            student=self.student,
+            month='2026-11',
+            monthly_fee=4500,
+            amount_paid=4500,
+        )
+
+        with patch('portal.views.timezone.localdate', return_value=date(2026, 10, 26)):
+            self.client.force_login(student_user)
+            dashboard = self.client.get(reverse('student_dashboard'))
+            self.assertEqual(
+                dashboard.context['student_fee_current_monthly_fee'],
+                october_record.monthly_fee,
+            )
+            self.assertEqual(
+                dashboard.context['student_fee_current_paid'],
+                october_record.amount_paid,
+            )
+            self.assertEqual(dashboard.context['student_fee_current_due'], 0)
+            self.assertContains(dashboard, dashboard.context['student_fee_current_month_label'])
+            self.assertContains(dashboard, 'নির্ধারিত বেতন 5000.00 টাকা')
+            self.assertContains(dashboard, 'জমা 5000.00 টাকা')
+            self.assertContains(dashboard, 'বাকি 0.00 টাকা')
+            november_display_record = next(
+                record for record in dashboard.context['student_fee_records']
+                if record.month == november_record.month
+            )
+            self.assertContains(
+                dashboard,
+                f'{november_display_record.month_label}-এর বেতন: 4500.00 টাকা',
+            )
+            self.assertContains(
+                dashboard,
+                f'{november_display_record.month_label}-এ জমা: 4500.00 টাকা',
+            )
+
+            self.client.force_login(self.superadmin)
+            accounts = self.client.get(reverse('admin_student_accounts'))
+            row = next(
+                row for row in accounts.context['student_fee_page'].object_list
+                if row['student'] == self.student
+            )
+            self.assertEqual(row['selected_month_fee'], october_record.monthly_fee)
+            self.assertEqual(row['selected_month_paid'], october_record.amount_paid)
+            self.assertEqual(row['selected_month_due'], 0)
+            self.assertEqual(row['records'][0].monthly_fee, november_record.monthly_fee)
+            self.assertEqual(row['records'][0].amount_paid, november_record.amount_paid)
 
     def test_teacher_can_upload_file_for_students(self):
         self.client.force_login(self.teacher)

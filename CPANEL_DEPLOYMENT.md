@@ -91,7 +91,9 @@ Run this after each deployment that changes CSS, JavaScript, images, or template
 python manage.py collectstatic --noinput
 ```
 
-`STATIC_ROOT` defaults to the private application's `staticfiles` directory. WhiteNoise serves the collected files through Django/Passenger, so no manual copy into `public_html` is needed. The learning-material downloads remain behind the app's authorization checks in the private `media` directory.
+`STATIC_ROOT` defaults to the private application's `staticfiles` directory. In production, WhiteNoise serves compressed, content-hashed static assets through Django/Passenger, so no manual copy into `public_html` is needed. Run `collectstatic` after each deployment so the optimized assets and their manifest are refreshed. The learning-material downloads remain behind the app's authorization checks in the private `media` directory.
+
+Fee receipts are generated in memory when downloaded; PDF copies are not stored in the database or on disk. Keep the bundled Bengali receipt font and logo in the project `static/fonts` and `static/images` directories.
 
 ## 6. Restart and verify
 

@@ -1,4 +1,4 @@
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
 
 STUDENT_BOOK_SECTIONS = [
@@ -108,7 +108,7 @@ STUDENT_BOOK_SECTIONS = [
 ]
 
 
-def mobile_pdf_download_url(view_url):
+def mobile_pdf_preview_url(view_url):
     if not view_url:
         return view_url
     parsed_url = urlsplit(view_url)
@@ -120,5 +120,13 @@ def mobile_pdf_download_url(view_url):
         and path_parts[:2] == ['file', 'd']
         and path_parts[3] == 'view'
     ):
-        return f'https://drive.google.com/uc?export=download&id={path_parts[2]}'
+        resource_keys = parse_qs(parsed_url.query).get('resourcekey', [])
+        query = urlencode({'resourcekey': resource_keys[0]}) if resource_keys else ''
+        return urlunsplit((
+            'https',
+            'drive.google.com',
+            f'/file/d/{path_parts[2]}/preview',
+            query,
+            '',
+        ))
     return view_url

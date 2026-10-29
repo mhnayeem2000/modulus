@@ -2,3 +2,5 @@ Django==6.1.2
 PyMySQL==1.1.2
 whitenoise==6.9.0
 google-genai>=1.0,<2
+fpdf2>=2.8,<3
+uharfbuzz>=0.39,<1

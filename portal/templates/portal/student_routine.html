@@ -35,7 +35,7 @@
 </section>
 <section class="content-grid student-dashboard-grid">
   <article class="panel"><div class="panel-heading"><div><span class="eyebrow">পড়ার অগ্রগতি</span><h2>সাম্প্রতিক ক্লাস</h2></div></div>
-    {% if sessions %}<div class="student-activity-list">{% for session in sessions %}<div class="student-activity-row session-activity-row"><span class="session-date"><strong>{{ session.date|date:"d" }}</strong><small>{{ session.date|date:"M" }}</small></span><span class="activity-description"><strong>{{ session.subject }}{% if session.paper %} · {{ session.paper }}{% endif %}</strong><small>{{ session.chapter }}{% if session.topic %} · {{ session.topic }}{% endif %}</small></span></div>{% endfor %}</div>{% else %}<div class="empty-state"><span>▤</span><strong>এখনো কোনো ক্লাসের তথ্য যোগ হয়নি</strong><p>শিক্ষক ক্লাসের তথ্য যোগ করলে এখানে পাবে।</p></div>{% endif %}
+    {% if sessions %}<div class="student-activity-list">{% for session in sessions %}<a class="student-activity-row session-activity-row session-study-link" href="{% url 'student_dashboard' %}?study_date={{ session.date|date:'Y-m-d' }}#todays-study"><span class="session-date"><strong>{{ session.date|date:"d" }}</strong><small>{{ session.date|date:"M" }}</small></span><span class="activity-description"><strong>{{ session.subject }}{% if session.paper %} · {{ session.paper }}{% endif %}</strong><small>{{ session.chapter }}{% if session.topic %} · {{ session.topic }}{% endif %}</small></span><span class="session-study-link-label">পড়ার বিস্তারিত →</span></a>{% endfor %}</div>{% else %}<div class="empty-state"><span>▤</span><strong>এখনো কোনো ক্লাসের তথ্য যোগ হয়নি</strong><p>শিক্ষক ক্লাসের তথ্য যোগ করলে এখানে পাবে।</p></div>{% endif %}
   </article>
 </section>
 {% endblock %}

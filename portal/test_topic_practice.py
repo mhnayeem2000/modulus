@@ -153,6 +153,8 @@ class TopicPracticeTests(TestCase):
             CQ_INITIAL_COUNT,
         )
         self.assertIn('Original cq prompt 0', data['html'])
+        self.assertIn('<span class="practice-answer-label">উত্তর:</span>', data['html'])
+        self.assertNotIn('<strong>Original cq prompt 0</strong>', data['html'])
 
     @patch('portal.topic_practice_views.generate_topic_practice')
     def test_create_mcq_practice_saves_twenty_mcqs_with_four_choices(self, generate):

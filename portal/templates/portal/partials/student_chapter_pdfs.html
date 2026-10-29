@@ -16,7 +16,7 @@
       <span class="student-book-section-count">{{ section.chapters|length }} অধ্যায়</span>
     </header>
     <div class="student-book-grid">
-      {% for chapter, url, mobile_download_url in section.chapters %}
+      {% for chapter, url, mobile_preview_url in section.chapters %}
       <article class="student-book-card{% if not url %} student-book-card-unavailable{% endif %}">
         <span class="student-book-index">{{ forloop.counter|stringformat:"02d" }}</span>
         <div class="student-book-info">
@@ -28,7 +28,7 @@
           {% endif %}
         </div>
         {% if url %}
-        <a class="student-book-open" href="{{ url }}" data-desktop-url="{{ url }}" data-mobile-download-url="{{ mobile_download_url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ chapter }} PDF পড়ুন">
+        <a class="student-book-open" href="{{ url }}" data-desktop-url="{{ url }}" data-mobile-preview-url="{{ mobile_preview_url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ chapter }} PDF পড়ুন">
           <span>PDF পড়ুন</span><span aria-hidden="true">↗</span>
         </a>
         {% else %}
